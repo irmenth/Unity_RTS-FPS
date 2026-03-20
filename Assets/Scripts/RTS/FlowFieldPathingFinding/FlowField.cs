@@ -1,0 +1,180 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class FlowField
+{
+    public Cell[,] Grid { get; private set; }
+    private readonly int gridWidth;
+    private readonly int gridHeight;
+    private readonly float cellRadius;
+    private readonly float cellDiameter;
+
+    public FlowField(int gridWidth, int gridHeight, float cellRadius)
+    {
+        this.gridWidth = gridWidth;
+        this.gridHeight = gridHeight;
+        this.cellRadius = cellRadius;
+        this.cellDiameter = cellRadius * 2f;
+        Grid = new Cell[gridWidth, gridHeight];
+    }
+
+    public void GenerateGrid()
+    {
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                var worldPos = new Vector3(cellDiameter * x + cellRadius, 0, cellDiameter * y + cellRadius);
+                var gridPos = new Vector2Int(x, y);
+                Grid[x, y] = new Cell(worldPos, gridPos);
+            }
+        }
+    }
+
+    private readonly Collider[] lapBoxHitBuffter = new Collider[20];
+
+    public void GenerateCostField(LayerMask costLayerMask, int impassibleLayer, int roughLayer)
+    {
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                int hitCount = Physics.OverlapBoxNonAlloc(Grid[x, y].WorldPos, Vector3.one * cellRadius, lapBoxHitBuffter, Quaternion.identity, costLayerMask);
+
+                bool hasRecordRough = false, hasRecordImpassible = false;
+                for (int i = 0; i < hitCount; i++)
+                {
+                    if (float.IsInfinity(Grid[x, y].cost)) break;
+
+                    if (!hasRecordImpassible && lapBoxHitBuffter[i].gameObject.layer == impassibleLayer)
+                    {
+                        Grid[x, y].cost += float.PositiveInfinity;
+                        hasRecordImpassible = true;
+                    }
+                    else if (!hasRecordRough && lapBoxHitBuffter[i].gameObject.layer == roughLayer)
+                    {
+                        Grid[x, y].cost += 3f;
+                        hasRecordRough = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private Vector2Int WorldToGridPos(Vector3 worldPos)
+    {
+        return new Vector2Int(Mathf.FloorToInt(worldPos.x / cellDiameter), Mathf.FloorToInt(worldPos.z / cellDiameter));
+    }
+
+    private readonly Queue<int> openList = new();
+
+    public void GenerateHeatMap(Vector3 mousePos)
+    {
+        openList.Clear();
+        var closedList = new bool[gridWidth * gridHeight];
+
+        var mouseGridPos = WorldToGridPos(mousePos);
+        if (float.IsInfinity(Grid[mouseGridPos.x, mouseGridPos.y].cost)) return;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                Grid[x, y].heat = float.PositiveInfinity;
+            }
+        }
+        Grid[mouseGridPos.x, mouseGridPos.y].heat = 0;
+        openList.Enqueue(mouseGridPos.x * gridHeight + mouseGridPos.y);
+
+        while (openList.Count > 0)
+        {
+            var curIndex = openList.Dequeue();
+            var curGridPos = new Vector2Int(curIndex / gridHeight, curIndex % gridHeight);
+            closedList[curIndex] = true;
+
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -1; j <= 1; j++)
+                {
+                    if (i == 0 && j == 0) continue;
+                    Vector2Int newGridPos = new(Grid[curGridPos.x, curGridPos.y].GridPos.x + i, Grid[curGridPos.x, curGridPos.y].GridPos.y + j);
+                    var newIndex = newGridPos.x * gridHeight + newGridPos.y;
+                    if (newGridPos.x < 0 || newGridPos.x >= gridWidth || newGridPos.y < 0 || newGridPos.y >= gridHeight) continue;
+                    if (closedList[newGridPos.x * gridHeight + newGridPos.y]) continue;
+
+                    if (float.IsInfinity(Grid[newGridPos.x, newGridPos.y].cost))
+                    {
+                        closedList[newIndex] = true;
+                        continue;
+                    }
+
+                    var moveCost = Grid[newGridPos.x, newGridPos.y].cost;
+                    if (i * j != 0)
+                        moveCost *= 1.4f;
+
+                    var newCost = Grid[curGridPos.x, curGridPos.y].heat + moveCost;
+                    if (newCost < Grid[newGridPos.x, newGridPos.y].heat)
+                    {
+                        Grid[newGridPos.x, newGridPos.y].heat = newCost;
+                        if (!openList.Contains(newIndex))
+                            openList.Enqueue(newIndex);
+                    }
+
+                }
+            }
+        }
+    }
+
+    public void GenerateFlowField()
+    {
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                Grid[x, y].direction = Vector2.zero;
+            }
+        }
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                if (float.IsInfinity(Grid[x, y].cost))
+                {
+                    Grid[x, y].direction = new(-1, -1);
+                    continue;
+                }
+
+                var minHeat = Grid[x, y].heat;
+                var dir = Vector2.zero;
+                for (int i = -1; i <= 1; i++)
+                {
+                    for (int j = -1; j <= 1; j++)
+                    {
+                        if (i == 0 && j == 0) continue;
+                        var newGridPos = new Vector2Int(x + i, y + j);
+                        if (newGridPos.x < 0 || newGridPos.x >= gridWidth || newGridPos.y < 0 || newGridPos.y >= gridHeight) continue;
+
+                        var newHeat = Grid[newGridPos.x, newGridPos.y].heat;
+                        if (newHeat < minHeat)
+                        {
+                            minHeat = newHeat;
+                            dir.Set(i, j);
+                        }
+                    }
+                }
+                if (Mathf.Approximately(minHeat, Grid[x, y].heat)) continue;
+
+                Grid[x, y].direction = dir;
+                if (dir == new Vector2Int(1, 1))
+                    Grid[x, y].direction.Set(0.71f, 0.71f);
+                else if (dir == new Vector2Int(-1, 1))
+                    Grid[x, y].direction.Set(-0.71f, 0.71f);
+                else if (dir == new Vector2Int(1, -1))
+                    Grid[x, y].direction.Set(0.71f, -0.71f);
+                else if (dir == new Vector2Int(-1, -1))
+                    Grid[x, y].direction.Set(-0.71f, -0.71f);
+            }
+        }
+    }
+}

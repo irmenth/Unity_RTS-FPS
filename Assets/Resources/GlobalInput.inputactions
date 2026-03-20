@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "GlobalInput",
+    "maps": [
+        {
+            "name": "RTS",
+            "id": "2b70213e-57af-4daf-8650-57f9edde719d",
+            "actions": [
+                {
+                    "name": "SetDestination",
+                    "type": "Button",
+                    "id": "ad2ed450-1b59-4846-9b4d-90216f7ba381",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "af1c993f-3ba5-42aa-8e95-f55453faef96",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SetDestination",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
