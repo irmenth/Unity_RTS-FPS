@@ -10,9 +10,9 @@ public struct Cell
     /// </summary>
     public float heat;
     /// <summary>
-    /// -1 * Vector3.one means impassible
+    /// -1 * Vector2.one means impassible
     /// </summary>
-    public Vector3 direction;
+    public Vector2 direction;
 
     public Cell(Vector3 worldPos, Vector2Int gridPos)
     {
@@ -20,6 +20,6 @@ public struct Cell
         GridPos = gridPos;
         cost = 1;
         heat = float.PositiveInfinity;
-        direction = Vector3.zero;
+        direction = Vector2.zero;
     }
 }

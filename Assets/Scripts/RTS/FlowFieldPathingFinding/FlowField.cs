@@ -35,6 +35,7 @@ public class FlowField
 
     public void GenerateCostField(LayerMask costLayerMask, int impassibleLayer, int roughLayer)
     {
+        var subCellDiameter = cellDiameter / 3f;
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
@@ -48,13 +49,45 @@ public class FlowField
 
                     if (!hasRecordImpassible && lapBoxHitBuffter[i].gameObject.layer == impassibleLayer)
                     {
-                        Grid[x, y].cost += float.PositiveInfinity;
-                        hasRecordImpassible = true;
+                        var subCellHitCount = 0;
+                        for (int m = -1; m <= 1; m++)
+                        {
+                            for (int n = -1; n <= 1; n++)
+                            {
+                                if (subCellHitCount >= 4) break;
+
+                                var curSubCellPos = Grid[x, y].WorldPos + new Vector3(m * subCellDiameter, -10, n * subCellDiameter);
+                                if (Physics.Raycast(curSubCellPos, Vector3.up, out var hit, 100f, 1 << impassibleLayer))
+                                    subCellHitCount++;
+                            }
+                        }
+
+                        if (subCellHitCount >= 4)
+                        {
+                            Grid[x, y].cost += float.PositiveInfinity;
+                            hasRecordImpassible = true;
+                        }
                     }
                     else if (!hasRecordRough && lapBoxHitBuffter[i].gameObject.layer == roughLayer)
                     {
-                        Grid[x, y].cost += 1f;
-                        hasRecordRough = true;
+                        var subCellHitCount = 0;
+                        for (int m = -1; m <= 1; m++)
+                        {
+                            for (int n = -1; n <= 1; n++)
+                            {
+                                if (subCellHitCount >= 4) break;
+
+                                var curSubCellPos = Grid[x, y].WorldPos + new Vector3(m * subCellDiameter, -10, n * subCellDiameter);
+                                if (Physics.Raycast(curSubCellPos, Vector3.up, out var hit, 100f, 1 << roughLayer))
+                                    subCellHitCount++;
+                            }
+                        }
+
+                        if (subCellHitCount >= 4)
+                        {
+                            Grid[x, y].cost += 1f;
+                            hasRecordRough = true;
+                        }
                     }
                 }
             }
@@ -138,7 +171,7 @@ public class FlowField
         {
             for (int y = 0; y < gridHeight; y++)
             {
-                Grid[x, y].direction = Vector3.zero;
+                Grid[x, y].direction = Vector2.zero;
             }
         }
 
@@ -148,7 +181,7 @@ public class FlowField
             {
                 if (float.IsInfinity(Grid[x, y].cost))
                 {
-                    Grid[x, y].direction = -1 * Vector3.one;
+                    Grid[x, y].direction = -Vector2.one;
                     continue;
                 }
 
@@ -172,7 +205,15 @@ public class FlowField
                 }
                 if (Mathf.Approximately(minHeat, Grid[x, y].heat)) continue;
 
-                Grid[x, y].direction = new Vector3(dir.x, 0, dir.y).normalized;
+                Grid[x, y].direction = dir;
+                if (dir.x == -1 && dir.y == -1)
+                    Grid[x, y].direction = new Vector2(-0.71f, -0.71f);
+                else if (dir.x == 1 && dir.y == 1)
+                    Grid[x, y].direction = new Vector2(0.71f, 0.71f);
+                else if (dir.x == -1 && dir.y == 1)
+                    Grid[x, y].direction = new Vector2(-0.71f, 0.71f);
+                else if (dir.x == 1 && dir.y == -1)
+                    Grid[x, y].direction = new Vector2(0.71f, -0.71f);
             }
         }
     }

@@ -968,7 +968,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridCC: {fileID: 1658818113}
-  unitRadius: 0.1
+  unitRadius: 0.12
   moveSpeed: 4
 --- !u!1 &802953186
 GameObject:
@@ -1122,8 +1122,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c098ee756e539c74bb9fee5acf3d7527, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridSize: {x: 50, y: 30}
-  cellRadius: 0.25
+  gridSize: {x: 25, y: 15}
+  cellRadius: 0.5
   costLayerMask:
     serializedVersion: 2
     m_Bits: 384

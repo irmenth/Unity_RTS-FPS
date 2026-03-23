@@ -49,7 +49,7 @@ public class GridController : MonoBehaviour
         //     for (int y = 0; y < gridSize.y; y++)
         //     {
         //         var pos = CurFlowField.Grid[x, y].WorldPos + cellRadius * Vector3.left;
-        //         UnityEditor.Handles.Label(pos, CurFlowField.Grid[x, y].cost.ToString());
+        //         UnityEditor.Handles.Label(pos, CurFlowField.Grid[x, y].cost.ToString("F1"));
         //     }
         // }
 
@@ -72,25 +72,25 @@ public class GridController : MonoBehaviour
                 var pos = CurFlowField.Grid[x, y].WorldPos + 10f * Vector3.up;
 
                 Material dirIndictorMat = null;
-                if (dir == -1 * Vector3.one)
+                if (dir == -Vector2.one)
                     dirIndictorMat = cross;
-                else if (dir == Vector3.forward)
+                else if (dir == Vector2.up)
                     dirIndictorMat = upArrow;
-                else if (dir == Vector3.back)
+                else if (dir == Vector2.down)
                     dirIndictorMat = downArrow;
-                else if (dir == Vector3.left)
+                else if (dir == Vector2.left)
                     dirIndictorMat = leftArrow;
-                else if (dir == Vector3.right)
+                else if (dir == Vector2.right)
                     dirIndictorMat = rightArrow;
-                else if (dir == new Vector3(1, 0, 1).normalized)
+                else if (dir == new Vector2(0.71f, 0.71f))
                     dirIndictorMat = upRightArrow;
-                else if (dir == new Vector3(-1, 0, 1).normalized)
+                else if (dir == new Vector2(-0.71f, 0.71f))
                     dirIndictorMat = upLeftArrow;
-                else if (dir == new Vector3(1, 0, -1).normalized)
+                else if (dir == new Vector2(0.71f, -0.71f))
                     dirIndictorMat = downRightArrow;
-                else if (dir == new Vector3(-1, 0, -1).normalized)
+                else if (dir == new Vector2(-0.71f, -0.71f))
                     dirIndictorMat = downLeftArrow;
-                else if (dir == Vector3.zero)
+                else if (dir == Vector2.zero)
                     dirIndictorMat = flag;
 
                 if (dirIndictorMat != null && dirIndicatorMeshRenderers[x, y] != null)
