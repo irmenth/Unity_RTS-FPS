@@ -105,13 +105,13 @@ public class GridController : MonoBehaviour
         //             dirIndictorMat = leftArrow;
         //         else if (dir == Vector2.right)
         //             dirIndictorMat = rightArrow;
-        //         else if (dir == new Vector2(0.71f, 0.71f))
+        //         else if (UsefulUtils.Approximately(dir, Vector2.one.normalized))
         //             dirIndictorMat = upRightArrow;
-        //         else if (dir == new Vector2(-0.71f, 0.71f))
+        //         else if (UsefulUtils.Approximately(dir, -Vector2.one.normalized))
         //             dirIndictorMat = upLeftArrow;
-        //         else if (dir == new Vector2(0.71f, -0.71f))
+        //         else if (UsefulUtils.Approximately(dir, new Vector2(1, -1).normalized))
         //             dirIndictorMat = downRightArrow;
-        //         else if (dir == new Vector2(-0.71f, -0.71f))
+        //         else if (UsefulUtils.Approximately(dir, new Vector2(-1, 1).normalized))
         //             dirIndictorMat = downLeftArrow;
         //         else if (dir == Vector2.zero)
         //             dirIndictorMat = flag;

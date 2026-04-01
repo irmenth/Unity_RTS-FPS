@@ -124,5 +124,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridCC: {fileID: 0}
-  unitRadius: 0.3
+  unitRadius: 0.25
   moveSpeed: 5

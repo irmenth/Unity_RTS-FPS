@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 public class ObstacleCollider : MonoBehaviour
@@ -10,6 +11,7 @@ public class ObstacleCollider : MonoBehaviour
 
     private void Awake()
     {
-        obstacle = new Obstacles(obstacleType, new Circle(transform, circleRadius), new Rectangle(transform, rectBaseSize));
+        var pos = new float2(transform.position.x, transform.position.z);
+        obstacle = new Obstacles(obstacleType, new Circle(pos, circleRadius), new Rectangle(pos, rectBaseSize));
     }
 }

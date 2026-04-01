@@ -6,9 +6,9 @@ using Unity.Mathematics;
 [BurstCompile]
 public struct FlowFieldJob : IJobParallelFor
 {
-    public int width, height;
-    [ReadOnly] public NativeArray<float> heatMap;
-    public NativeArray<float2> flowDir;
+    private readonly int width, height;
+    [ReadOnly] private NativeArray<float> heatMap;
+    private NativeArray<float2> flowDir;
 
     public FlowFieldJob(int width, int height, NativeArray<float> heatMap, NativeArray<float2> flowDir)
     {
@@ -51,14 +51,6 @@ public struct FlowFieldJob : IJobParallelFor
         }
         if (math.abs(minHeat - heatMap[index]) < 1e-6f) return;
 
-        flowDir[index] = baseDir;
-        if (baseDir.x == -1 && baseDir.y == -1)
-            flowDir[index] = new float2(-0.71f, -0.71f);
-        else if (baseDir.x == 1 && baseDir.y == -1)
-            flowDir[index] = new float2(0.71f, -0.71f);
-        else if (baseDir.x == 1 && baseDir.y == 1)
-            flowDir[index] = new float2(0.71f, 0.71f);
-        else if (baseDir.x == -1 && baseDir.y == 1)
-            flowDir[index] = new float2(-0.71f, 0.71f);
+        flowDir[index] = math.normalize(baseDir);
     }
 }

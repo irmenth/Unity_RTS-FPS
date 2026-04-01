@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 public interface ICells
@@ -39,14 +39,14 @@ public struct ObstacleCell : ICells
     private Vector2Int gridPos;
     public readonly Vector3 GetWorldPos() => worldPos;
     public readonly Vector2Int GetGridPos() => gridPos;
-    public readonly List<Obstacles> obstacleList;
-    public readonly List<UnitAgent> unitList;
+    public readonly NativeArray<Obstacles> obstacleList;
+    public readonly NativeArray<UnitAgentData> unitList;
 
     public ObstacleCell(Vector3 worldPos, Vector2Int gridPos)
     {
         this.worldPos = worldPos;
         this.gridPos = gridPos;
-        obstacleList = new List<Obstacles>();
-        unitList = new List<UnitAgent>();
+        obstacleList = new NativeArray<Obstacles>();
+        unitList = new NativeArray<UnitAgentData>();
     }
 }

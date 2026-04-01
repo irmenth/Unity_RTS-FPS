@@ -27,37 +27,39 @@ public static class UsefulUtils
         return new Vector2(v3.x, v3.z);
     }
 
+    public static bool Approximately(Vector2 a, Vector2 b)
+    {
+        return Vector2.SqrMagnitude(a - b) < 1e-12f;
+    }
+
+    public static bool Approximately(Vector3 a, Vector3 b)
+    {
+        return Vector3.SqrMagnitude(a - b) < 1e-12f;
+    }
+
+    public static float2 ClampMagnitude(float2 v, float maxLength)
+    {
+        bool mask = math.length(v) <= maxLength;
+        return math.select(math.normalize(v) * maxLength, v, mask);
+    }
+
     public static Vector2 ProjectOnLine(Vector2 inVec, Vector2 normal)
     {
         return inVec - Vector2.Dot(inVec, normal) * normal;
     }
 
-    public static bool HasCollideWithCircleObstacle(Circle circle, Vector3 unitWS, float unitRadius, out Vector2 negImpactDir)
+    public static float2 ProjectOnLine(float2 inVec, float2 normal)
     {
-        var center = circle.transform.position;
-        var center2D = V3ToV2(center);
-        var unitWS2D = V3ToV2(unitWS);
-        var isCollided = Vector2.SqrMagnitude(center2D - unitWS2D) < Mathf.Pow(circle.radius + unitRadius, 2);
-        var isInside = isCollided && Vector2.SqrMagnitude(center2D - unitWS2D) < Mathf.Pow(circle.radius, 2);
+        return inVec - math.dot(inVec, normal) * normal;
+    }
 
-        if (isCollided)
-        {
-            var dir = (unitWS2D - center2D).normalized;
-            if (!isInside)
-                negImpactDir = dir;
-            else
-                negImpactDir = -dir;
-        }
-        else
-        {
-            negImpactDir = Vector2.zero;
-        }
+    public static bool HasCollideWithCircleObstacle(Circle circle, float2 unitWS, float unitRadius, out float2 negImpactDir)
+    {
+        float2 center = circle.center;
+        bool isCollided = math.lengthsq(center - unitWS) < math.pow(circle.radius + unitRadius, 2);
+        negImpactDir = math.select(float2.zero, math.normalize(unitWS - center), isCollided);
 
         return isCollided;
-    }
-    public static bool HasCollideWithCircleObstacle(Circle circle, Vector2 unitWS, float unitRadius, out Vector2 negImpactDir)
-    {
-        return HasCollideWithCircleObstacle(circle, V2ToV3(unitWS), unitRadius, out negImpactDir);
     }
 
     /// <summary>

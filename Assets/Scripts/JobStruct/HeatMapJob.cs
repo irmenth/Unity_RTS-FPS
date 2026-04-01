@@ -6,13 +6,13 @@ using Unity.Mathematics;
 [BurstCompile]
 public struct HeatMapJob : IJob
 {
-    public int width, height;
-    public int destination;
-    public NativeQueue<int> openList;
-    public NativeArray<byte> inOpenList;
-    public NativeArray<byte> closeList;
-    public NativeArray<float> costMap;
-    public NativeArray<float> heatMap;
+    private readonly int width, height;
+    private readonly int destination;
+    private NativeQueue<int> openList;
+    private NativeArray<byte> inOpenList;
+    private NativeArray<byte> closeList;
+    [ReadOnly] private NativeArray<float> costMap;
+    private NativeArray<float> heatMap;
 
     public HeatMapJob(int width, int height, int destination, NativeQueue<int> openList, NativeArray<byte> inOpenList, NativeArray<byte> closeList, NativeArray<float> costMap, NativeArray<float> heatMap)
     {
