@@ -17,25 +17,17 @@ public static class UsefulUtils
         return layer;
     }
 
-    public static Vector3 V2ToV3(Vector2 v2, float y = 0f)
-    {
-        return new Vector3(v2.x, y, v2.y);
-    }
+    public static Vector3 V2ToV3(Vector2 v2, float y = 0f) => new(v2.x, y, v2.y);
 
-    public static Vector2 V3ToV2(Vector3 v3)
-    {
-        return new Vector2(v3.x, v3.z);
-    }
+    public static Vector2 V3ToV2(Vector3 v3) => new(v3.x, v3.z);
 
-    public static bool Approximately(Vector2 a, Vector2 b)
-    {
-        return Vector2.SqrMagnitude(a - b) < 1e-12f;
-    }
+    public static bool Approximately(Vector2 a, Vector2 b) => Vector2.SqrMagnitude(a - b) < 1e-12f;
 
-    public static bool Approximately(Vector3 a, Vector3 b)
-    {
-        return Vector3.SqrMagnitude(a - b) < 1e-12f;
-    }
+    public static bool Approximately(Vector3 a, Vector3 b) => Vector3.SqrMagnitude(a - b) < 1e-12f;
+
+    public static bool Approximately(float2 a, float2 b) => math.lengthsq(a - b) < 1e-12f;
+
+    public static bool Approximately(float3 a, float3 b) => math.lengthsq(a - b) < 1e-12f;
 
     public static float2 ClampMagnitude(float2 v, float maxLength)
     {
@@ -43,15 +35,9 @@ public static class UsefulUtils
         return math.select(math.normalize(v) * maxLength, v, mask);
     }
 
-    public static Vector2 ProjectOnLine(Vector2 inVec, Vector2 normal)
-    {
-        return inVec - Vector2.Dot(inVec, normal) * normal;
-    }
+    public static Vector2 ProjectOnLine(Vector2 inVec, Vector2 normal) => inVec - Vector2.Dot(inVec, normal) * normal;
 
-    public static float2 ProjectOnLine(float2 inVec, float2 normal)
-    {
-        return inVec - math.dot(inVec, normal) * normal;
-    }
+    public static float2 ProjectOnLine(float2 inVec, float2 normal) => inVec - math.dot(inVec, normal) * normal;
 
     public static bool HasCollideWithCircleObstacle(Circle circle, float2 unitWS, float unitRadius, out float2 negImpactDir)
     {
@@ -69,89 +55,75 @@ public static class UsefulUtils
     /// <param name="unitTrans"></param>
     /// <param name="unitRadius"></param>
     /// <returns></returns>
-    public static Vector3 IfIntersectWithCircleObstacle(Circle circle, Vector3 unitWS, float unitRadius)
+    public static float2 IfIntersectWithCircleObstacle(Circle circle, float2 unitWS, float unitRadius)
     {
-        var position = unitWS;
-        var center = circle.transform.position;
-        var center2D = V3ToV2(center);
-        var unitWS2D = V3ToV2(unitWS);
-        var isIntersected = Vector2.SqrMagnitude(center2D - unitWS2D) < Mathf.Pow(circle.radius + unitRadius, 2);
-        var isInside = isIntersected && Vector2.SqrMagnitude(center2D - unitWS2D) < Mathf.Pow(circle.radius, 2);
+        float2 position = unitWS;
+        float2 center = circle.center;
+        bool isIntersected = math.lengthsq(center - unitWS) < math.pow(circle.radius + unitRadius, 2);
 
         if (isIntersected)
         {
-            var dir = (unitWS2D - center2D).normalized;
-            position = center + V2ToV3(dir) * (circle.radius + unitRadius);
+            float2 dir = math.normalize(unitWS - center);
+            position = center + (circle.radius + unitRadius) * dir;
         }
 
         return position;
     }
 
-    public static bool HasCollideWithRectObstacle(Rectangle rect, Vector3 unitWS, float unitRadius, out Vector2 negImpactDir)
+    public static bool HasCollideWithRectObstacle(Rectangle rect, float2 unitWS, float unitRadius, out float2 negImpactDir)
     {
-        var rectTrans = rect.transform;
-        var center2D = V3ToV2(rectTrans.position);
-        var halfSize = new Vector2(rect.baseSize.x * rectTrans.lossyScale.x, rect.baseSize.y * rectTrans.lossyScale.z) / 2;
-        var unitWS2D = V3ToV2(unitWS);
-        var right = rectTrans.right;
-        var up = rectTrans.forward;
+        negImpactDir = float2.zero;
 
-        var unitToCenter = V2ToV3(unitWS2D - center2D);
-        var projX = Vector3.Dot(unitToCenter, right);
-        var projY = Vector3.Dot(unitToCenter, up);
-        var unitLS = new Vector2(projX, projY);
+        float2 center = rect.center;
+        float2 halfSize = rect.size / 2f;
+        float2 right = rect.right;
+        float2 up = rect.up;
 
-        var isInside = unitLS.x < halfSize.x && unitLS.x > -halfSize.x && unitLS.y < halfSize.y && unitLS.y > -halfSize.y;
+        float2 unitToCenter = unitWS - center;
+        float projX = math.dot(unitToCenter, right);
+        float projY = math.dot(unitToCenter, up);
+        float2 unitLS = new(projX, projY);
 
-        var closestPoint = Vector2.zero;
+        bool isInside = unitLS.x < halfSize.x && unitLS.x > -halfSize.x && unitLS.y < halfSize.y && unitLS.y > -halfSize.y;
+
+        float2 closestPoint = float2.zero;
         if (!isInside)
         {
-            closestPoint.x = Mathf.Clamp(unitLS.x, -halfSize.x, halfSize.x);
-            closestPoint.y = Mathf.Clamp(unitLS.y, -halfSize.y, halfSize.y);
+            closestPoint.x = math.clamp(unitLS.x, -halfSize.x, halfSize.x);
+            closestPoint.y = math.clamp(unitLS.y, -halfSize.y, halfSize.y);
         }
         else
         {
-            if (Mathf.Min(halfSize.x - unitLS.x, unitLS.x + halfSize.x) < Mathf.Min(halfSize.y - unitLS.y, unitLS.y + halfSize.y))
+            if (math.min(halfSize.x - unitLS.x, unitLS.x + halfSize.x) < math.min(halfSize.y - unitLS.y, unitLS.y + halfSize.y))
             {
-                closestPoint.y = Mathf.Clamp(unitLS.y, -halfSize.y, halfSize.y);
-                closestPoint.x = unitLS.x > 0 ? halfSize.x : -halfSize.x;
+                closestPoint.y = math.clamp(unitLS.y, -halfSize.y, halfSize.y);
+                closestPoint.x = math.select(-halfSize.x, halfSize.x, unitLS.x > 0);
             }
             else
             {
-                closestPoint.x = Mathf.Clamp(unitLS.x, -halfSize.x, halfSize.x);
-                closestPoint.y = unitLS.y > 0 ? halfSize.y : -halfSize.y;
+                closestPoint.x = math.clamp(unitLS.x, -halfSize.x, halfSize.x);
+                closestPoint.y = math.select(-halfSize.y, halfSize.y, unitLS.y > 0);
             }
         }
 
-        if (Mathf.Abs(unitLS.x - halfSize.x) < 1e-3f)
-            closestPoint.x += unitLS.x > halfSize.x ? -1e-3f : 1e-3f;
-        else if (Mathf.Abs(unitLS.x + halfSize.x) < 1e-3f)
-            closestPoint.x += unitLS.x > -halfSize.x ? -1e-3f : 1e-3f;
-        if (Mathf.Abs(unitLS.y - halfSize.y) < 1e-3f)
-            closestPoint.y += unitLS.y > halfSize.y ? -1e-3f : 1e-3f;
-        else if (Mathf.Abs(unitLS.y + halfSize.y) < 1e-3f)
-            closestPoint.y += unitLS.y > -halfSize.y ? -1e-3f : 1e-3f;
-
-        var closestPointWS = V3ToV2(V2ToV3(center2D) + right * closestPoint.x + up * closestPoint.y);
-        var isCollided = isInside || Vector2.SqrMagnitude(closestPoint - unitLS) < Mathf.Pow(unitRadius, 2);
+        bool isCollided = isInside || math.lengthsq(closestPoint - unitLS) < math.pow(unitRadius, 2);
         if (isCollided)
         {
-            var dir = (unitWS2D - closestPointWS).normalized;
-            if (isInside)
-                negImpactDir = -dir;
-            else
-                negImpactDir = dir;
-        }
-        else
-        {
-            negImpactDir = Vector2.zero;
+            if (math.abs(unitLS.x - halfSize.x) < 1e-6f)
+                closestPoint.x += math.select(1e-6f, -1e-6f, unitLS.x > closestPoint.x);
+            else if (math.abs(unitLS.x + halfSize.x) < 1e-6f)
+                closestPoint.x += math.select(1e-6f, -1e-6f, unitLS.x > closestPoint.x);
+            if (math.abs(unitLS.y - halfSize.y) < 1e-6f)
+                closestPoint.y += math.select(1e-6f, -1e-6f, unitLS.y > closestPoint.y);
+            else if (math.abs(unitLS.y + halfSize.y) < 1e-6f)
+                closestPoint.y += math.select(1e-6f, -1e-6f, unitLS.y > closestPoint.y);
+
+            float2 dirLS = unitLS - closestPoint;
+            float2 dirWS = math.normalize(center + dirLS.x * right + dirLS.y * up);
+            negImpactDir = math.select(dirWS, -dirWS, isInside);
         }
 
         return isCollided;
-    }
-    public static bool HasCollideWithRectObstacle(Rectangle rect, Vector2 unitWS, float unitRadius, out Vector2 negImpactDir)
-    {
-        return HasCollideWithRectObstacle(rect, V2ToV3(unitWS), unitRadius, out negImpactDir);
     }
 
     /// <summary>
@@ -161,62 +133,57 @@ public static class UsefulUtils
     /// <param name="unitTrans"></param>
     /// <param name="unitRadius"></param>
     /// <returns></returns>
-    public static Vector3 IfIntersectWithRectObstacle(Rectangle rect, Vector3 unitWS, float unitRadius)
+    public static float2 IfIntersectWithRectObstacle(Rectangle rect, float2 unitWS, float unitRadius)
     {
-        var position = unitWS;
-        var rectTrans = rect.transform;
-        var center2D = V3ToV2(rectTrans.position);
-        var halfSize = new Vector2(rect.baseSize.x * rectTrans.lossyScale.x, rect.baseSize.y * rectTrans.lossyScale.z) / 2;
-        var unitWS2D = V3ToV2(unitWS);
-        var right = rectTrans.right;
-        var up = rectTrans.forward;
+        float2 position = unitWS;
+        float2 center = rect.center;
+        float2 halfSize = rect.size / 2f;
+        float2 right = rect.right;
+        float2 up = rect.up;
 
-        var unitToCenter = V2ToV3(unitWS2D - center2D);
-        var projX = Vector3.Dot(unitToCenter, right);
-        var projY = Vector3.Dot(unitToCenter, up);
-        var unitLS = new Vector2(projX, projY);
+        float2 unitToCenter = unitWS - center;
+        float projX = math.dot(unitToCenter, right);
+        float projY = math.dot(unitToCenter, up);
+        float2 unitLS = new(projX, projY);
 
-        var isInside = unitLS.x < halfSize.x && unitLS.x > -halfSize.x && unitLS.y < halfSize.y && unitLS.y > -halfSize.y;
+        bool isInside = unitLS.x < halfSize.x && unitLS.x > -halfSize.x && unitLS.y < halfSize.y && unitLS.y > -halfSize.y;
 
-        var closestPoint = Vector2.zero;
+        float2 closestPoint = float2.zero;
         if (!isInside)
         {
-            closestPoint.x = Mathf.Clamp(unitLS.x, -halfSize.x, halfSize.x);
-            closestPoint.y = Mathf.Clamp(unitLS.y, -halfSize.y, halfSize.y);
+            closestPoint.x = math.clamp(unitLS.x, -halfSize.x, halfSize.x);
+            closestPoint.y = math.clamp(unitLS.y, -halfSize.y, halfSize.y);
         }
         else
         {
-            if (Mathf.Min(halfSize.x - unitLS.x, unitLS.x + halfSize.x) < Mathf.Min(halfSize.y - unitLS.y, unitLS.y + halfSize.y))
+            if (math.min(halfSize.x - unitLS.x, unitLS.x + halfSize.x) < math.min(halfSize.y - unitLS.y, unitLS.y + halfSize.y))
             {
-                closestPoint.y = Mathf.Clamp(unitLS.y, -halfSize.y, halfSize.y);
-                closestPoint.x = unitLS.x > 0 ? halfSize.x : -halfSize.x;
+                closestPoint.y = math.clamp(unitLS.y, -halfSize.y, halfSize.y);
+                closestPoint.x = math.select(-halfSize.x, halfSize.x, unitLS.x > 0);
             }
             else
             {
-                closestPoint.x = Mathf.Clamp(unitLS.x, -halfSize.x, halfSize.x);
-                closestPoint.y = unitLS.y > 0 ? halfSize.y : -halfSize.y;
+                closestPoint.x = math.clamp(unitLS.x, -halfSize.x, halfSize.x);
+                closestPoint.y = math.select(-halfSize.y, halfSize.y, unitLS.y > 0);
             }
         }
 
-        if (Mathf.Abs(unitLS.x - halfSize.x) < 1e-3f)
-            closestPoint.x += unitLS.x > halfSize.x ? -1e-3f : 1e-3f;
-        else if (Mathf.Abs(unitLS.x + halfSize.x) < 1e-3f)
-            closestPoint.x += unitLS.x > -halfSize.x ? -1e-3f : 1e-3f;
-        if (Mathf.Abs(unitLS.y - halfSize.y) < 1e-3f)
-            closestPoint.y += unitLS.y > halfSize.y ? -1e-3f : 1e-3f;
-        else if (Mathf.Abs(unitLS.y + halfSize.y) < 1e-3f)
-            closestPoint.y += unitLS.y > -halfSize.y ? -1e-3f : 1e-3f;
-
-        var closestPointWS = V3ToV2(V2ToV3(center2D) + right * closestPoint.x + up * closestPoint.y);
-        var closestPointWS3D = V2ToV3(closestPointWS);
-        var isIntersected = Vector2.SqrMagnitude(closestPoint - unitLS) < Mathf.Pow(unitRadius, 2) || isInside;
+        var isIntersected = isInside || math.lengthsq(closestPoint - unitLS) < math.pow(unitRadius, 2);
         if (isIntersected)
         {
-            var dir = V2ToV3((unitWS2D - closestPointWS).normalized);
-            if (isInside)
-                position = closestPointWS3D - dir * unitRadius;
-            else
-                position = closestPointWS3D + dir * unitRadius;
+            if (math.abs(unitLS.x - halfSize.x) < 1e-6f)
+                closestPoint.x += math.select(1e-6f, -1e-6f, unitLS.x > closestPoint.x);
+            else if (math.abs(unitLS.x + halfSize.x) < 1e-6f)
+                closestPoint.x += math.select(1e-6f, -1e-6f, unitLS.x > closestPoint.x);
+            if (math.abs(unitLS.y - halfSize.y) < 1e-6f)
+                closestPoint.y += math.select(1e-6f, -1e-6f, unitLS.y > closestPoint.y);
+            else if (math.abs(unitLS.y + halfSize.y) < 1e-6f)
+                closestPoint.y += math.select(1e-6f, -1e-6f, unitLS.y > closestPoint.y);
+
+            float2 closestPointWS = center + closestPoint.x * right + closestPoint.y * up;
+            float2 dirLS = unitLS - closestPoint;
+            float2 dirWS = math.normalize(center + dirLS.x * right + dirLS.y * up);
+            position = math.select(closestPointWS + unitRadius * dirWS, closestPointWS - unitRadius * dirWS, isInside);
         }
 
         return position;

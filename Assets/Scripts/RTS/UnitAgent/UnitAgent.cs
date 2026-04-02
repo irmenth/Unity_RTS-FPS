@@ -1,17 +1,26 @@
-using System;
 using Unity.Mathematics;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public struct UnitAgentData
 {
     public int unitID;
-    public float unitRadius;
-    public float moveSpeed;
+    public readonly float unitRadius;
+    public readonly float moveSpeed;
     public float2 position;
+    public float2 velocity;
     public int2 unitDgPos;
     public int2 unitOgPos;
 
+    public UnitAgentData(float unitRadius, float moveSpeed, float2 position)
+    {
+        unitID = -1;
+        this.unitRadius = unitRadius;
+        this.moveSpeed = moveSpeed;
+        this.position = position;
+        velocity = new float2(0, 0);
+        unitDgPos = new int2(-1, -1);
+        unitOgPos = new int2(-1, -1);
+    }
     public static bool operator ==(UnitAgentData a, UnitAgentData b) => a.unitID == b.unitID;
     public static bool operator !=(UnitAgentData a, UnitAgentData b) => a.unitID != b.unitID;
     public override readonly bool Equals(object obj) => obj is UnitAgentData other && this == other;
@@ -20,6 +29,28 @@ public struct UnitAgentData
 
 public class UnitAgent : MonoBehaviour
 {
+    [SerializeField] private float moveSpeed;
+    [SerializeField] private float unitRadius;
+
+    private UnitAgentData unitData;
+
+    private void Awake()
+    {
+        float2 pos = new(transform.position.x, transform.position.z);
+        unitData = new UnitAgentData(unitRadius, moveSpeed, pos);
+        unitData.unitID = UnitRegister.Register(unitData);
+    }
+
+    private void Update()
+    {
+        var pos = UnitRegister.unitRegistry[unitData.unitID].position;
+        transform.position = new Vector3(pos.x, 0, pos.y);
+    }
+
+    private void OnDestroy()
+    {
+        UnitRegister.Unregister(unitData.unitID);
+    }
     // public int unitID;
     // public GridController gridCC;
     // public float unitRadius;

@@ -52,21 +52,11 @@ public class FlowField
     /// <returns>
     /// -1 * Vector2Int.one if out of range
     /// </returns>
-    public Vector2Int WorldToDirGridPos(Vector3 worldPos)
+    public int2 WorldToDirGridPos(float2 worldPos)
     {
-        var gridPos = new Vector2Int(Mathf.FloorToInt(worldPos.x / dcDiameter), Mathf.FloorToInt(worldPos.z / dcDiameter));
-        if (gridPos.x < 0 || gridPos.x >= dgWidth || gridPos.y < 0 || gridPos.y >= dgHeight) return new Vector2Int(-1, -1);
+        int2 gridPos = new((int)math.floor(worldPos.x / dcDiameter), (int)math.floor(worldPos.y / dcDiameter));
+        if (gridPos.x < 0 || gridPos.x >= dgWidth || gridPos.y < 0 || gridPos.y >= dgHeight) return new int2(-1, -1);
         return gridPos;
-    }
-    /// <summary>
-    /// </summary>
-    /// <param name="worldPos"></param>
-    /// <returns>
-    /// (-1, -1) if out of range
-    /// </returns>
-    public Vector2Int WorldToGridPos(Vector2 worldPos)
-    {
-        return WorldToDirGridPos(UsefulUtils.V2ToV3(worldPos));
     }
 
     /// <summary>
@@ -75,21 +65,11 @@ public class FlowField
     /// <returns>
     /// -1 * Vector2Int.one if out of range
     /// </returns>
-    public Vector2Int WorldToObstacleGridPos(Vector3 worldPos)
+    public int2 WorldToObstacleGridPos(float2 worldPos)
     {
-        var gridPos = new Vector2Int(Mathf.FloorToInt(worldPos.x / ocDiameter), Mathf.FloorToInt(worldPos.z / ocDiameter));
-        if (gridPos.x < 0 || gridPos.x >= ogWidth || gridPos.y < 0 || gridPos.y >= ogHeight) return new Vector2Int(-1, -1);
+        int2 gridPos = new((int)math.floor(worldPos.x / ocDiameter), (int)math.floor(worldPos.y / ocDiameter));
+        if (gridPos.x < 0 || gridPos.x >= ogWidth || gridPos.y < 0 || gridPos.y >= ogHeight) return new int2(-1, -1);
         return gridPos;
-    }
-    /// <summary>
-    /// </summary>
-    /// <param name="worldPos"></param>
-    /// <returns>
-    /// -1 * Vector2Int.one if out of range
-    /// </returns>
-    public Vector2Int WorldToObstacleGridPos(Vector2 worldPos)
-    {
-        return WorldToObstacleGridPos(UsefulUtils.V2ToV3(worldPos));
     }
 
     public void GenerateGrid()
@@ -98,8 +78,8 @@ public class FlowField
         {
             for (int y = 0; y < dgHeight; y++)
             {
-                var worldPos = new Vector3(dcDiameter * x + dcRadius, 0, dcDiameter * y + dcRadius);
-                var gridPos = new Vector2Int(x, y);
+                Vector3 worldPos = new(dcDiameter * x + dcRadius, 0, dcDiameter * y + dcRadius);
+                Vector2Int gridPos = new(x, y);
                 DirGrid[x, y] = new DirCell(worldPos, gridPos);
             }
         }
@@ -108,8 +88,8 @@ public class FlowField
         {
             for (int y = 0; y < ogHeight; y++)
             {
-                var worldPos = new Vector3(ocDiameter * x + ocRadius, 0, ocDiameter * y + ocRadius);
-                var gridPos = new Vector2Int(x, y);
+                Vector3 worldPos = new(ocDiameter * x + ocRadius, 0, ocDiameter * y + ocRadius);
+                Vector2Int gridPos = new(x, y);
                 ObstacleGrid[x, y] = new ObstacleCell(worldPos, gridPos);
             }
         }
@@ -119,7 +99,7 @@ public class FlowField
 
     public void GenerateCostField(LayerMask costLayerMask, int impassibleLayer, int roughLayer)
     {
-        var subCellDiameter = dcDiameter / 3f;
+        float subCellDiameter = dcDiameter / 3f;
         for (int x = 0; x < dgWidth; x++)
         {
             for (int y = 0; y < dgHeight; y++)
@@ -133,7 +113,7 @@ public class FlowField
 
                     if (!hasRecordImpassible && cfBoxHitBuffter[i].gameObject.layer == impassibleLayer)
                     {
-                        var subCellHitCount = 0;
+                        int subCellHitCount = 0;
                         for (int dx = -1; dx <= 1; dx++)
                         {
                             for (int dy = -1; dy <= 1; dy++)
@@ -154,7 +134,7 @@ public class FlowField
                     }
                     else if (!hasRecordRough && cfBoxHitBuffter[i].gameObject.layer == roughLayer)
                     {
-                        var subCellHitCount = 0;
+                        int subCellHitCount = 0;
                         for (int dx = -1; dx <= 1; dx++)
                         {
                             for (int dy = -1; dy <= 1; dy++)
@@ -178,7 +158,7 @@ public class FlowField
         }
     }
 
-    public void GenerateHeatMapBurst(Vector2Int destinationGridPos)
+    public void GenerateHeatMapBurst(int2 destinationGridPos)
     {
         int size = dgWidth * dgHeight, destination = destinationGridPos.x * dgHeight + destinationGridPos.y;
 

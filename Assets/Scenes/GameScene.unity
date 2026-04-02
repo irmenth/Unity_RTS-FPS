@@ -754,8 +754,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstacleType: 1
+  obstacleTransform: {fileID: 0}
   circleRadius: 0
-  rectBaseSize: {x: 1, y: 1}
+  rectSize:
+    x: 1
+    y: 1
 --- !u!1 &622748574
 GameObject:
   m_ObjectHideFlags: 0
@@ -878,8 +881,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstacleType: 1
+  obstacleTransform: {fileID: 0}
   circleRadius: 0
-  rectBaseSize: {x: 1, y: 1}
+  rectSize:
+    x: 1
+    y: 1
 --- !u!1 &802953186
 GameObject:
   m_ObjectHideFlags: 0
@@ -1032,6 +1038,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dd702196208e1e4083e57fe3e3d3246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gc: {fileID: 1658818113}
 --- !u!1 &1658818111
 GameObject:
   m_ObjectHideFlags: 0
@@ -1077,10 +1084,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitPrefab: {fileID: 9174790623470415362, guid: 8e5fb3cc42264b54fa58799d1a20d41f, type: 3}
-  directionGridSize: {x: 250, y: 200}
-  directionCellRadius: 0.1
-  obstacleGridSize: {x: 50, y: 40}
-  obstacleCellRadius: 0.5
+  directionGridSize: {x: 125, y: 100}
+  directionCellRadius: 0.2
+  obstacleGridSize: {x: 25, y: 20}
+  obstacleCellRadius: 1
   costLayerMask:
     serializedVersion: 2
     m_Bits: 384
@@ -1228,8 +1235,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstacleType: 0
+  obstacleTransform: {fileID: 0}
   circleRadius: 2
-  rectBaseSize: {x: 1, y: 1}
+  rectSize:
+    x: 1
+    y: 1
 --- !u!1 &2121777875
 GameObject:
   m_ObjectHideFlags: 0
@@ -1278,8 +1288,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstacleType: 0
+  obstacleTransform: {fileID: 0}
   circleRadius: 2
-  rectBaseSize: {x: 1, y: 1}
+  rectSize:
+    x: 1
+    y: 1
 --- !u!136 &2121777878
 CapsuleCollider:
   m_ObjectHideFlags: 0

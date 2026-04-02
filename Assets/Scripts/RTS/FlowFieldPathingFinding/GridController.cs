@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Debug = UnityEngine.Debug;
@@ -36,25 +37,25 @@ public class GridController : MonoBehaviour
 #if UNITY_EDITOR
         if (CurFlowField == null) return;
 
-        // // Draw direction grid
-        // Gizmos.color = Color.yellow;
-        // for (int x = 0; x < directionGridSize.x; x++)
-        // {
-        //     for (int y = 0; y < directionGridSize.y; y++)
-        //     {
-        //         Gizmos.DrawWireCube(CurFlowField.DirGrid[x, y].GetWorldPos(), directionCellRadius * 2f * Vector3.one);
-        //     }
-        // }
-
-        // // Draw obstacle grid
+        // Draw direction grid
         Gizmos.color = Color.yellow;
-        for (int x = 0; x < obstacleGridSize.x; x++)
+        for (int x = 0; x < directionGridSize.x; x++)
         {
-            for (int y = 0; y < obstacleGridSize.y; y++)
+            for (int y = 0; y < directionGridSize.y; y++)
             {
-                Gizmos.DrawWireCube(CurFlowField.ObstacleGrid[x, y].GetWorldPos(), obstacleCellRadius * 2f * Vector3.one);
+                Gizmos.DrawWireCube(CurFlowField.DirGrid[x, y].GetWorldPos(), directionCellRadius * 2f * Vector3.one);
             }
         }
+
+        // // // Draw obstacle grid
+        // Gizmos.color = Color.yellow;
+        // for (int x = 0; x < obstacleGridSize.x; x++)
+        // {
+        //     for (int y = 0; y < obstacleGridSize.y; y++)
+        //     {
+        //         Gizmos.DrawWireCube(CurFlowField.ObstacleGrid[x, y].GetWorldPos(), obstacleCellRadius * 2f * Vector3.one);
+        //     }
+        // }
 
         // // Draw Cost Field
         // for (int x = 0; x < directionGridSize.x; x++)
@@ -76,50 +77,51 @@ public class GridController : MonoBehaviour
         //     }
         // }
 
-        // Draw Obstacle Count
-        for (int x = 0; x < obstacleGridSize.x; x++)
-        {
-            for (int y = 0; y < obstacleGridSize.y; y++)
-            {
-                var pos = CurFlowField.ObstacleGrid[x, y].GetWorldPos() + obstacleCellRadius * Vector3.left;
-                UnityEditor.Handles.Label(pos, CurFlowField.ObstacleGrid[x, y].obstacleList.Count.ToString());
-            }
-        }
-
-        // // Draw Flow Field
-        // for (int x = 0; x < directionGridSize.x; x++)
+        // // Draw Obstacle Count
+        // for (int x = 0; x < obstacleGridSize.x; x++)
         // {
-        //     for (int y = 0; y < directionGridSize.y; y++)
+        //     for (int y = 0; y < obstacleGridSize.y; y++)
         //     {
-        //         var dir = CurFlowField.DirGrid[x, y].direction;
-        //         var pos = CurFlowField.DirGrid[x, y].GetWorldPos() + 10f * Vector3.up;
-
-        //         Material dirIndictorMat = null;
-        //         if (dir == -Vector2.one)
-        //             dirIndictorMat = cross;
-        //         else if (dir == Vector2.up)
-        //             dirIndictorMat = upArrow;
-        //         else if (dir == Vector2.down)
-        //             dirIndictorMat = downArrow;
-        //         else if (dir == Vector2.left)
-        //             dirIndictorMat = leftArrow;
-        //         else if (dir == Vector2.right)
-        //             dirIndictorMat = rightArrow;
-        //         else if (UsefulUtils.Approximately(dir, Vector2.one.normalized))
-        //             dirIndictorMat = upRightArrow;
-        //         else if (UsefulUtils.Approximately(dir, -Vector2.one.normalized))
-        //             dirIndictorMat = upLeftArrow;
-        //         else if (UsefulUtils.Approximately(dir, new Vector2(1, -1).normalized))
-        //             dirIndictorMat = downRightArrow;
-        //         else if (UsefulUtils.Approximately(dir, new Vector2(-1, 1).normalized))
-        //             dirIndictorMat = downLeftArrow;
-        //         else if (dir == Vector2.zero)
-        //             dirIndictorMat = flag;
-
-        //         if (dirIndictorMat != null && dirIndicatorMeshRenderers[x, y] != null)
-        //             dirIndicatorMeshRenderers[x, y].sharedMaterial = dirIndictorMat;
+        //         var pos = CurFlowField.ObstacleGrid[x, y].GetWorldPos() + obstacleCellRadius * Vector3.left;
+        //         var count = CurFlowField.ObstacleGrid[x, y].obstacleList.Count;
+        //         UnityEditor.Handles.Label(pos, count.ToString());
         //     }
         // }
+
+        // Draw Flow Field
+        for (int x = 0; x < directionGridSize.x; x++)
+        {
+            for (int y = 0; y < directionGridSize.y; y++)
+            {
+                var dir = CurFlowField.DirGrid[x, y].direction;
+                var pos = CurFlowField.DirGrid[x, y].GetWorldPos() + 10f * Vector3.up;
+
+                Material dirIndictorMat = null;
+                if (UsefulUtils.Approximately(dir, new float2(-1, -1)))
+                    dirIndictorMat = cross;
+                else if (UsefulUtils.Approximately(dir, new float2(0, 1)))
+                    dirIndictorMat = upArrow;
+                else if (UsefulUtils.Approximately(dir, new float2(0, -1)))
+                    dirIndictorMat = downArrow;
+                else if (UsefulUtils.Approximately(dir, new float2(-1, 0)))
+                    dirIndictorMat = leftArrow;
+                else if (UsefulUtils.Approximately(dir, new float2(1, 0)))
+                    dirIndictorMat = rightArrow;
+                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, 1))))
+                    dirIndictorMat = upRightArrow;
+                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, 1))))
+                    dirIndictorMat = upLeftArrow;
+                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, -1))))
+                    dirIndictorMat = downRightArrow;
+                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, -1))))
+                    dirIndictorMat = downLeftArrow;
+                else if (UsefulUtils.Approximately(dir, new float2(0, 0)))
+                    dirIndictorMat = flag;
+
+                if (dirIndictorMat != null && dirIndicatorMeshRenderers[x, y] != null)
+                    dirIndicatorMeshRenderers[x, y].sharedMaterial = dirIndictorMat;
+            }
+        }
 #endif
     }
 
@@ -134,13 +136,14 @@ public class GridController : MonoBehaviour
         var ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out var hit, 1000f, groundLayerMask))
         {
-            var mouseGridPos = CurFlowField.WorldToDirGridPos(hit.point);
-            if (mouseGridPos == -Vector2Int.one) return;
+            float2 hitPoint = new(hit.point.x, hit.point.z);
+            var mouseGridPos = CurFlowField.WorldToDirGridPos(hitPoint);
+            if (math.all(mouseGridPos == new int2(-1, -1))) return;
 
             CurFlowField.GenerateHeatMapBurst(mouseGridPos);
             CurFlowField.GenerateFlowFieldBurst();
 
-            EventBus.Publish(new MoveToEvent(hit.point));
+            EventBus.Publish(new MoveToEvent(hitPoint));
         }
 
 #if UNITY_EDITOR
@@ -149,19 +152,22 @@ public class GridController : MonoBehaviour
 #endif
     }
 
+    private int unitCount;
+
     private void GenerateUnit(InputAction.CallbackContext ctx)
     {
         var mousePos = Pointer.current.position.ReadValue();
         var ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out var hit, 1000f, groundLayerMask))
         {
-            var unit = Instantiate(unitPrefab, hit.point, Quaternion.identity);
-            unit.GetComponent<UnitAgent>().gridCC = this;
+            Instantiate(unitPrefab, hit.point, Quaternion.identity);
+            unitCount++;
+            Debug.Log($"[GridController] unit count: {unitCount}");
         }
     }
 
 #if UNITY_EDITOR
-    // private MeshRenderer[,] dirIndicatorMeshRenderers;
+    private MeshRenderer[,] dirIndicatorMeshRenderers;
 #endif
     private int impassibleLayer, roughLayer;
 
@@ -169,6 +175,9 @@ public class GridController : MonoBehaviour
     {
         impassibleLayer = UsefulUtils.GetLayer(impassibleLayerMask);
         roughLayer = UsefulUtils.GetLayer(roughLayerMask);
+
+        InputActionsManager.RTSSetDestination.started += SetDestination;
+        InputActionsManager.RTSGenerateUnit.started += GenerateUnit;
     }
 
     private void Start()
@@ -179,20 +188,17 @@ public class GridController : MonoBehaviour
         CurFlowField.GenerateObstacleMap(impassibleLayer);
 
 #if UNITY_EDITOR
-        // dirIndicatorMeshRenderers = new MeshRenderer[directionGridSize.x, directionGridSize.y];
+        dirIndicatorMeshRenderers = new MeshRenderer[directionGridSize.x, directionGridSize.y];
 
-        // for (int x = 0; x < directionGridSize.x; x++)
-        // {
-        //     for (int y = 0; y < directionGridSize.y; y++)
-        //     {
-        //         var pos = CurFlowField.DirGrid[x, y].GetWorldPos() + 10 * Vector3.up;
-        //         dirIndicatorMeshRenderers[x, y] = Instantiate(dirIndictorPrefab, pos, Quaternion.Euler(90, 0, 0)).GetComponent<MeshRenderer>();
-        //     }
-        // }
+        for (int x = 0; x < directionGridSize.x; x++)
+        {
+            for (int y = 0; y < directionGridSize.y; y++)
+            {
+                var pos = CurFlowField.DirGrid[x, y].GetWorldPos() + 10 * Vector3.up;
+                dirIndicatorMeshRenderers[x, y] = Instantiate(dirIndictorPrefab, pos, Quaternion.Euler(90, 0, 0)).GetComponent<MeshRenderer>();
+            }
+        }
 #endif
-
-        InputActionsManager.RTSSetDestination.started += SetDestination;
-        InputActionsManager.RTSGenerateUnit.started += GenerateUnit;
     }
 
     private void OnDestroy()

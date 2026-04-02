@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 public class UnitRegister
 {
@@ -8,7 +7,7 @@ public class UnitRegister
 
     public static int Register(UnitAgentData unitData)
     {
-        if (unitRegistry.ContainsValue(unitData))
+        if (unitRegistry.ContainsKey(unitData.unitID))
         {
             return unitData.unitID;
         }
