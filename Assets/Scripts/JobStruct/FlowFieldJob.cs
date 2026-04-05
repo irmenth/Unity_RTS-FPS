@@ -23,7 +23,7 @@ public struct FlowFieldJob : IJobParallelFor
 
         if (math.isinf(directionGrid[index].heat))
         {
-            flowDir[index] = new float2(-1, -1);
+            flowDir[index] = new(-1, -1);
             return;
         }
 

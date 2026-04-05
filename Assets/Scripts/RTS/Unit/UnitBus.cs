@@ -30,6 +30,20 @@ public class UnitBus : MonoBehaviour
         job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
     }
 
+    private void DetectArrived()
+    {
+        if (arrived) return;
+
+        float2 center = float2.zero;
+        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
+        {
+            center += unitReg[i].position;
+        }
+        center /= UnitRegister.instance.indexer + 1;
+
+        if (math.lengthsq(center - destination) < 0.5f) arrived = true;
+    }
+
     private void UpdateUnitPositionBurst()
     {
         NativeArray<UnitAgentData> unitRegRO = new(unitReg.Length, Allocator.TempJob);
@@ -38,6 +52,7 @@ public class UnitBus : MonoBehaviour
         UpdateUnitPositionJob job = new(
             gc.flowField.dgSize,
             gc.flowField.ogSize,
+            gc.flowField.dcRadius,
             gc.flowField.ocRadius,
             Time.deltaTime,
             arrived,
@@ -62,20 +77,6 @@ public class UnitBus : MonoBehaviour
         arrived = false;
     }
 
-    private void DetectIsArrived()
-    {
-        if (arrived) return;
-
-        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
-        {
-            if (math.lengthsq(unitReg[i].position - destination) < 1f)
-            {
-                arrived = true;
-                return;
-            }
-        }
-    }
-
     private NativeArray<UnitAgentData> unitReg;
 
     private void Awake()
@@ -87,9 +88,9 @@ public class UnitBus : MonoBehaviour
 
     private void Update()
     {
-        DetectIsArrived();
         UpdateCellToUnit();
         UpdateUnitGridIndex();
+        DetectArrived();
         UpdateUnitPositionBurst();
     }
 

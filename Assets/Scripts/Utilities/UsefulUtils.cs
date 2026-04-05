@@ -32,7 +32,7 @@ public static class UsefulUtils
     public static float2 ClampMagnitude(float2 v, float maxLength)
     {
         bool mask = math.length(v) <= maxLength;
-        return math.select(math.normalize(v) * maxLength, v, mask);
+        return math.select(math.normalizesafe(v) * maxLength, v, mask);
     }
 
     public static Vector2 ProjectOnLine(Vector2 inVec, Vector2 normal) => inVec - Vector2.Dot(inVec, normal) * normal;
@@ -43,7 +43,7 @@ public static class UsefulUtils
     {
         float2 center = circle.center;
         bool isCollided = math.lengthsq(center - unitWS) < math.pow(circle.radius + unitRadius, 2);
-        negImpactDir = math.select(float2.zero, math.normalize(unitWS - center), isCollided);
+        negImpactDir = math.select(float2.zero, math.normalizesafe(unitWS - center), isCollided);
 
         return isCollided;
     }
@@ -63,7 +63,7 @@ public static class UsefulUtils
 
         if (isIntersected)
         {
-            float2 dir = math.normalize(unitWS - center);
+            float2 dir = math.normalizesafe(unitWS - center);
             position = center + (circle.radius + 1e-6f + unitRadius) * dir;
         }
 
@@ -119,7 +119,7 @@ public static class UsefulUtils
                 closestPoint.y += math.select(1e-6f, -1e-6f, unitLS.y > closestPoint.y);
 
             float2 dirLS = unitLS - closestPoint;
-            float2 dirWS = math.normalize(dirLS.x * right + dirLS.y * up);
+            float2 dirWS = math.normalizesafe(dirLS.x * right + dirLS.y * up);
             negImpactDir = math.select(dirWS, -dirWS, isInside);
         }
 
@@ -182,7 +182,7 @@ public static class UsefulUtils
 
             float2 closestPointWS = center + closestPoint.x * right + closestPoint.y * up;
             float2 dirLS = unitLS - closestPoint;
-            float2 dirWS = math.normalize(dirLS.x * right + dirLS.y * up);
+            float2 dirWS = math.normalizesafe(dirLS.x * right + dirLS.y * up);
             position = math.select(closestPointWS + (unitRadius + 1e-6f) * dirWS, closestPointWS - (unitRadius + 1e-6f) * dirWS, isInside);
         }
 

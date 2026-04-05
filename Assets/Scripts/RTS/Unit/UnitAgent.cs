@@ -28,8 +28,11 @@ public class UnitAgent : MonoBehaviour
 
     private void Update()
     {
-        var pos = UnitRegister.instance.unitRegistry[id].position;
-        transform.position = new Vector3(pos.x, 0, pos.y);
+        float2 pos = UnitRegister.instance.unitRegistry[id].position;
+        // float2 veloDir = math.normalizesafe(UnitRegister.instance.unitRegistry[id].velocity);
+        // Quaternion desiredRot = Quaternion.LookRotation(new(veloDir.x, 0, veloDir.y), Vector3.up);
+        // Quaternion rot = Quaternion.Slerp(transform.rotation, desiredRot, 5f * Time.deltaTime);
+        transform.SetPositionAndRotation(new(pos.x, transform.position.y, pos.y), Quaternion.identity);
     }
 
     private void OnDisable()
