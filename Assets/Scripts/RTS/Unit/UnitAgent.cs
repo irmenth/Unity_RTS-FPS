@@ -14,9 +14,12 @@ public class UnitAgent : MonoBehaviour
         id = evt.newID;
     }
 
+    private Transform tr;
+
     private void Awake()
     {
-        float2 pos = new(transform.position.x, transform.position.z);
+        tr = transform;
+        float2 pos = new(tr.position.x, tr.position.z);
         lastPos = pos;
         UnitAgentData data = new(unitRadius, moveSpeed, pos);
         id = UnitRegister.instance.Register(data);
@@ -48,14 +51,11 @@ public class UnitAgent : MonoBehaviour
                 lastPosUpdateTimer += Time.deltaTime;
             }
 
-            if (!UnitBus.arrived)
-            {
-                Quaternion desiredRot = Quaternion.LookRotation(new(posToLast.x, 0, posToLast.y), Vector3.up);
-                rot = Quaternion.Slerp(transform.rotation, desiredRot, 2f * Time.deltaTime);
-            }
+            Quaternion desiredRot = Quaternion.LookRotation(new(posToLast.x, 0, posToLast.y), Vector3.up);
+            rot = Quaternion.Slerp(tr.rotation, desiredRot, 4f * Time.deltaTime);
         }
 
-        transform.SetPositionAndRotation(new(pos.x, transform.position.y, pos.y), rot);
+        tr.SetPositionAndRotation(new(pos.x, tr.position.y, pos.y), rot);
     }
 
     private void OnDisable()

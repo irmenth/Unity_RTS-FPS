@@ -8,9 +8,11 @@ public class Test : MonoBehaviour
 
     private Rectangle rect;
     private Circle circle;
+    private Transform tr;
 
     private void Awake()
     {
+        tr = transform;
         rect = new(new(cube.position.x, cube.position.z), new(cube.localScale.x, cube.localScale.z), new(cube.right.x, cube.right.z), new(cube.forward.x, cube.forward.z));
         circle = new(new(cylinder.position.x, cylinder.position.z), cylinder.localScale.x / 2f);
     }
@@ -20,7 +22,7 @@ public class Test : MonoBehaviour
     private void Update()
     {
         velocity = new(-4, 0);
-        float2 pos = new(transform.position.x, transform.position.z);
+        float2 pos = new(tr.position.x, tr.position.z);
 
         if (UsefulUtils.HasCollideWithRectObstacle(rect, pos, 0.25f, out float2 negImpactDir))
             velocity = UsefulUtils.ProjectOnLine(velocity, negImpactDir);
@@ -31,6 +33,6 @@ public class Test : MonoBehaviour
         pos = UsefulUtils.IfIntersectWithRectObstacle(rect, pos, 0.25f);
         pos = UsefulUtils.IfIntersectWithCircleObstacle(circle, pos, 0.25f);
 
-        transform.position = new(pos.x, transform.position.y, pos.y);
+        tr.position = new(pos.x, tr.position.y, pos.y);
     }
 }

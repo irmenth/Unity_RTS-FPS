@@ -7,18 +7,19 @@ public class UnitBus : MonoBehaviour
 {
     [SerializeField] private GridController gc;
 
-    private void UpdateUnitGridIndex()
+    private void UpdateUnitGridIndexBurst()
     {
-        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
-        {
-            UnitAgentData agentData = unitReg[i];
-            agentData.dgIndex = gc.flowField.WorldToDGIndex(agentData.position);
-            agentData.ogIndex = gc.flowField.WorldToOGIndex(agentData.position);
-            unitReg[i] = agentData;
-        }
+        UpdateUnitGridIndexJob job = new(
+            gc.flowField.dgSize,
+            gc.flowField.ogSize,
+            gc.flowField.dcDiameter,
+            gc.flowField.ocDiameter,
+            unitReg
+            );
+        job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
     }
 
-    private void UpdateCellToUnit()
+    private void UpdateCellToUnitBurst()
     {
         gc.flowField.cellToUnit.Clear();
         UpdateCellToUnitJob job = new(
@@ -28,20 +29,6 @@ public class UnitBus : MonoBehaviour
             unitReg
             );
         job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
-    }
-
-    private void DetectArrived()
-    {
-        if (arrived) return;
-
-        float2 center = float2.zero;
-        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
-        {
-            center += unitReg[i].position;
-        }
-        center /= UnitRegister.instance.indexer + 1;
-
-        if (math.lengthsq(center - destination) < 0.5f) arrived = true;
     }
 
     private void UpdateUnitPositionBurst()
@@ -54,7 +41,8 @@ public class UnitBus : MonoBehaviour
             gc.flowField.ogSize,
             gc.flowField.ocRadius,
             Time.deltaTime,
-            arrived,
+            destination,
+            destRadius,
             unitReg,
             unitRegRO,
             gc.flowField.directionGrid,
@@ -67,13 +55,23 @@ public class UnitBus : MonoBehaviour
         unitRegRO.Dispose();
     }
 
-    public static bool arrived = true;
     private float2 destination;
+    private float destRadius;
 
     private void SetDestination(MoveToEvent evt)
     {
+        if (UnitRegister.instance.indexer + 1 <= 0) return;
+
         destination = evt.destination;
-        arrived = false;
+
+        float averageRadius = 0;
+        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
+        {
+            averageRadius += unitReg[i].radius;
+        }
+        averageRadius /= UnitRegister.instance.indexer + 1;
+        int row = Mathf.CeilToInt(Mathf.Sqrt(UnitRegister.instance.indexer + 1));
+        destRadius = 0.8f * Mathf.Sqrt(2) * averageRadius * row;
     }
 
     private NativeArray<UnitAgentData> unitReg;
@@ -87,11 +85,10 @@ public class UnitBus : MonoBehaviour
 
     private void Update()
     {
-        if (UnitRegister.instance.indexer < 0) return;
+        if (UnitRegister.instance.indexer + 1 <= 0) return;
 
-        UpdateCellToUnit();
-        UpdateUnitGridIndex();
-        DetectArrived();
+        UpdateCellToUnitBurst();
+        UpdateUnitGridIndexBurst();
         UpdateUnitPositionBurst();
     }
 

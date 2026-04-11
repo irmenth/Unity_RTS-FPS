@@ -20,7 +20,7 @@ public struct DirectionCell
         this.worldPos = worldPos;
         cost = 1;
         heat = float.PositiveInfinity;
-        direction = new(float.PositiveInfinity, float.PositiveInfinity);
+        direction = float2.zero;
     }
 }
 
