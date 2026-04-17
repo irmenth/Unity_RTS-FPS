@@ -9,8 +9,9 @@ public struct UpdateUnitPositionJob : IJobParallelFor
     private readonly int2 dgSize, ogSize;
     private readonly float ocRadius;
     private readonly float deltaTime;
-    private readonly float2 destination;
+    private readonly float2 destnation;
     private readonly float destRadius;
+    private readonly bool arrived;
     private NativeArray<UnitAgentData> unitReg;
     [ReadOnly] private NativeArray<UnitAgentData> unitRegRO;
     [ReadOnly] private NativeArray<DirectionCell> directionGrid;
@@ -23,8 +24,9 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         int2 ogSize,
         float ocRadius,
         float deltaTime,
-        float2 destination,
+        float2 destnation,
         float destRadius,
+        bool arrived,
         NativeArray<UnitAgentData> unitReg,
         NativeArray<UnitAgentData> unitRegRO,
         NativeArray<DirectionCell> directionGrid,
@@ -37,8 +39,9 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         this.ogSize = ogSize;
         this.ocRadius = ocRadius;
         this.deltaTime = deltaTime;
-        this.destination = destination;
+        this.destnation = destnation;
         this.destRadius = destRadius;
+        this.arrived = arrived;
         this.unitReg = unitReg;
         this.unitRegRO = unitRegRO;
         this.directionGrid = directionGrid;
@@ -50,6 +53,8 @@ public struct UpdateUnitPositionJob : IJobParallelFor
     public void Execute(int index)
     {
         UnitAgentData agentData = unitReg[index];
+
+        float invSqrt2 = 1 / math.sqrt(2);
 
         Random rand = new((uint)index + 1);
         int steps = (int)math.ceil(agentData.radius / ocRadius);
@@ -64,12 +69,13 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         float cost = directionGrid[agentData.dgIndex].cost;
         agentData.curMaxSpeed = math.select(agentData.speed / cost, agentData.speed, math.isinf(cost));
 
-        bool notInitializeDest = math.isinf(destination.x) && math.isinf(destination.y);
-        agentData.arrived = notInitializeDest || math.lengthsq(agentData.position - destination) <= math.pow(destRadius, 2);
+        agentData.arrived = math.lengthsq(agentData.position - destnation) < destRadius * destRadius;
 
         // BoidsAcceleration()
         float2 sepAccSum = float2.zero;
         int count = 0;
+        float alignSpeedFactor = 0;
+        int alignCount = 0;
         for (int dx = -steps; dx <= steps; dx++)
         {
             for (int dy = -steps; dy <= steps; dy++)
@@ -90,16 +96,23 @@ public struct UpdateUnitPositionJob : IJobParallelFor
                         float2 diff = data.position - agentData.position;
                         float maxDist = agentData.radius + data.radius + 0.4f * math.min(agentData.radius, data.radius);
                         float overLapDist = agentData.radius + data.radius + 0.2f * math.min(agentData.radius, data.radius);
-                        if (math.lengthsq(diff) < math.pow(maxDist, 2))
+                        if (math.lengthsq(diff) < maxDist * maxDist)
                         {
                             float dist = math.length(diff);
-                            float2 sepDir = dist < 1e-3f ? rand.NextFloat2Direction() : diff / dist;
+                            float2 distDir = diff / dist;
+                            float2 sepDir = dist < 1e-3f ? rand.NextFloat2Direction() : distDir;
                             float linearFactor = 1 - math.saturate(dist / maxDist);
-                            float overLap = 16 * agentData.curMaxSpeed * math.saturate(overLapDist - dist);
+                            float overLap = 8 * agentData.curMaxSpeed * math.saturate(overLapDist - dist);
                             float radiusFactor = math.clamp(data.radius / agentData.radius, 0.1f, 20f);
-                            float mag = (8 * agentData.curMaxSpeed * linearFactor + overLap) * radiusFactor;
+                            float mag = (4 * agentData.curMaxSpeed * linearFactor + overLap) * radiusFactor;
                             sepAccSum += mag * sepDir;
                             count++;
+
+                            if (math.dot(distDir, math.normalize(agentData.velocity)) > invSqrt2)
+                            {
+                                alignSpeedFactor += linearFactor;
+                                alignCount++;
+                            }
                         }
                     } while (cellToUnit.TryGetNextValue(out id, ref it));
                 }
@@ -107,7 +120,7 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         }
 
         // FlowFieldAcceleration()
-        if (!agentData.arrived)
+        if (!arrived && !agentData.arrived)
         {
             if (baseInf)
             {
@@ -141,14 +154,15 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         }
 
         // ApplyAcceleration()
+        alignSpeedFactor = math.select(alignSpeedFactor, alignSpeedFactor / alignCount, alignCount > 0);
         if (count > 0)
         {
-            sepAccSum = UsefulUtils.ClampMagnitude(sepAccSum, 8 * agentData.curMaxSpeed);
+            sepAccSum = UsefulUtils.ClampMagnitude(sepAccSum, 4 * agentData.curMaxSpeed);
             agentData.velocity += deltaTime * (-sepAccSum);
         }
-        if (!agentData.arrived)
+        if (!arrived && !agentData.arrived)
         {
-            agentData.velocity += 4 * agentData.curMaxSpeed * deltaTime * baseDir;
+            agentData.velocity += 2 * agentData.curMaxSpeed * (1 - alignSpeedFactor) * deltaTime * baseDir;
         }
         agentData.velocity = UsefulUtils.ClampMagnitude(agentData.velocity, agentData.curMaxSpeed);
 
@@ -187,7 +201,7 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         // Damping() && ApplyVelocity()
         if (!UsefulUtils.Approximately(agentData.velocity, float2.zero))
         {
-            agentData.velocity *= math.exp(-8f * deltaTime);
+            agentData.velocity *= math.exp(-6f * deltaTime);
             agentData.position += deltaTime * agentData.velocity;
         }
         else

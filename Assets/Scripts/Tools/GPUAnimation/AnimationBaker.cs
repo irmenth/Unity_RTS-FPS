@@ -1,63 +1,72 @@
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEngine;
+using System.IO;
 
 public class AnimationBaker : MonoBehaviour
 {
+    [SerializeField] private GameObject root;
     [SerializeField] private SkinnedMeshRenderer smr;
     [SerializeField] private AnimationClip clip;
     [SerializeField] private string clipName;
     [SerializeField][Range(1, 60)] private int frame;
 
-    private void Bake()
+    [MenuItem("Tools/GPU Animation/Bake Selected")]
+    public static void OpenBaker()
     {
-        GameObject root = smr.transform.parent.gameObject;
-        Animator tempAnimator = root.AddComponent<Animator>();
-        AnimatorController tempController = AnimatorController.CreateAnimatorControllerAtPath($"Assets/Resources/GPUAnimationTexture/{clipName}.controller");
-        tempController.AddMotion(clip);
-        tempAnimator.runtimeAnimatorController = tempController;
+        AnimationBaker baker = FindFirstObjectByType<AnimationBaker>();
+        if (baker == null) { Debug.LogError("场景中未找到 AnimationBaker 组件"); return; }
+        baker.BakeSync();
+    }
 
-        Mesh bakeMesh = new();
+    public void BakeSync()
+    {
+        if (root == null || smr == null || clip == null) return;
+
+        root.SetActive(true);
+
         int vertexCount = smr.sharedMesh.vertexCount;
         int frameCount = Mathf.CeilToInt(clip.length * frame);
-        Texture2D tex = new(frameCount, vertexCount * 3, TextureFormat.RGBAFloat, false);
+
+        Texture2D tex = new(frameCount, vertexCount * 2, TextureFormat.RGBAFloat, false, true);
         smr.updateWhenOffscreen = true;
-        tempAnimator.Play(clip.name);
-        float deltaTime = 1 / frame;
+        Mesh bakeMesh = new();
+
+        AnimationMode.StartAnimationMode();
 
         for (int f = 0; f < frameCount; f++)
         {
-            tempAnimator.Update(deltaTime);
+            float time = f / (frameCount - 1f) * clip.length;
+            AnimationMode.SampleAnimationClip(root, clip, time);
             smr.BakeMesh(bakeMesh, true);
 
-            Debug.Log(bakeMesh.vertices[300]);
+            Vector3[] v = bakeMesh.vertices;
+            Vector3[] n = bakeMesh.normals;
 
-            for (int v = 0; v < vertexCount; v++)
+            for (int i = 0; i < vertexCount; i++)
             {
-                Vector3 pos = bakeMesh.vertices[v];
-                Vector3 normal = bakeMesh.normals[v];
-                Vector4 tangent = bakeMesh.tangents[v];
-
-                tex.SetPixel(f, v * 3, new Color(pos.x, pos.y, pos.z));
-                tex.SetPixel(f, v * 3 + 1, new Color(normal.x, normal.y, normal.z));
-                tex.SetPixel(f, v * 3 + 2, new Color(tangent.x, tangent.y, tangent.z, tangent.w));
+                tex.SetPixel(f, i * 2, new Color(v[i].x, v[i].y, v[i].z));
+                tex.SetPixel(f, i * 2 + 1, new Color(n[i].x, n[i].y, n[i].z));
             }
+
+            bakeMesh.Clear();
         }
+
+        AnimationMode.StopAnimationMode();
 
         tex.filterMode = FilterMode.Point;
         tex.wrapMode = TextureWrapMode.Clamp;
         tex.Apply();
 
-        string path = $"Assets/Resources/GPUAnimationTexture/{clipName}.asset";
+        string dir = "Assets/Resources/GPUAnimationTexture";
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        string path = $"{dir}/{clipName}.asset";
+
         AssetDatabase.DeleteAsset(path);
         AssetDatabase.CreateAsset(tex, path);
         AssetDatabase.SaveAssets();
-
-        AssetDatabase.DeleteAsset($"Assets/Resources/GPUAnimationTexture/{clipName}.controller");
-    }
-
-    private void Awake()
-    {
-        Bake();
+        AssetDatabase.Refresh();
+        Debug.Log($"烘焙完成: {frameCount} 帧 | {vertexCount} 顶点");
     }
 }
+#endif

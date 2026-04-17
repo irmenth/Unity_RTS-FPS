@@ -10,9 +10,6 @@ public class CameraRotate : MonoBehaviour
 
     private void RotateCamera()
     {
-        bool shiftHeld = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
-        if (shiftHeld) return;
-
         float curX = Pointer.current.position.ReadValue().x;
         float delta = curX - startX;
         tr.Rotate(Vector3.up, delta * rotationSpeed * Time.deltaTime, Space.World);
@@ -21,6 +18,9 @@ public class CameraRotate : MonoBehaviour
 
     private void ShouldRotate(InputAction.CallbackContext ctx)
     {
+        bool shiftHeld = Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed;
+        if (shiftHeld) return;
+
         startX = Pointer.current.position.ReadValue().x;
         shouldRotate = true;
     }

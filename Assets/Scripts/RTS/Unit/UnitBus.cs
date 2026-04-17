@@ -7,6 +7,18 @@ public class UnitBus : MonoBehaviour
 {
     [SerializeField] private GridController gc;
 
+    private void UpdateArrived()
+    {
+        int arrivedCount = 0;
+        for (int i = 0; i < UnitRegister.instance.indexer + 1; i++)
+        {
+            if (math.lengthsq(unitReg[i].position - destination) < destRadius * destRadius) arrivedCount++;
+        }
+
+        if (arrivedCount / (UnitRegister.instance.indexer + 1f) >= 0.8f) arrived = true;
+        if (arrived) Debug.Log("Arrived");
+    }
+
     private void UpdateUnitGridIndexBurst()
     {
         UpdateUnitGridIndexJob job = new(
@@ -43,6 +55,7 @@ public class UnitBus : MonoBehaviour
             Time.deltaTime,
             destination,
             destRadius,
+            arrived,
             unitReg,
             unitRegRO,
             gc.flowField.directionGrid,
@@ -55,23 +68,25 @@ public class UnitBus : MonoBehaviour
         unitRegRO.Dispose();
     }
 
-    private float2 destination = new(float.PositiveInfinity, float.PositiveInfinity);
+    private float2 destination;
     private float destRadius;
+    private bool arrived = true;
+    private readonly static float sqrt2 = math.sqrt(2);
 
     private void SetDestination(MoveToEvent evt)
     {
         if (UnitRegister.instance.indexer + 1 <= 0) return;
 
         destination = evt.destination;
+        arrived = false;
 
         float averageRadius = 0;
-        for (int i = 0; i <= UnitRegister.instance.indexer; i++)
+        for (int i = 0; i < UnitRegister.instance.indexer + 1; i++)
         {
             averageRadius += unitReg[i].radius;
         }
         averageRadius /= UnitRegister.instance.indexer + 1;
-        int row = Mathf.CeilToInt(Mathf.Sqrt(UnitRegister.instance.indexer + 1));
-        destRadius = 0.8f * Mathf.Sqrt(2) * averageRadius * row;
+        destRadius = 0.8f * averageRadius * sqrt2 * math.ceil(math.sqrt(UnitRegister.instance.indexer + 1));
     }
 
     private NativeArray<UnitAgentData> unitReg;
@@ -87,6 +102,7 @@ public class UnitBus : MonoBehaviour
     {
         if (UnitRegister.instance.indexer + 1 <= 0) return;
 
+        UpdateArrived();
         UpdateCellToUnitBurst();
         UpdateUnitGridIndexBurst();
         UpdateUnitPositionBurst();

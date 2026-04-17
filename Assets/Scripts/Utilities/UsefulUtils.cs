@@ -17,13 +17,13 @@ public static class UsefulUtils
         return layer;
     }
 
-    public static bool Approximately(Vector2 a, Vector2 b, float eps = 1e-3f) => Vector2.SqrMagnitude(a - b) < Mathf.Pow(eps, 2f);
+    public static bool Approximately(Vector2 a, Vector2 b, float eps = 1e-3f) => Vector2.SqrMagnitude(a - b) < eps * eps;
 
-    public static bool Approximately(Vector3 a, Vector3 b, float eps = 1e-3f) => Vector3.SqrMagnitude(a - b) < Mathf.Pow(eps, 2f);
+    public static bool Approximately(Vector3 a, Vector3 b, float eps = 1e-3f) => Vector3.SqrMagnitude(a - b) < eps * eps;
 
-    public static bool Approximately(float2 a, float2 b, float eps = 1e-3f) => math.lengthsq(a - b) < math.pow(eps, 2f);
+    public static bool Approximately(float2 a, float2 b, float eps = 1e-3f) => math.lengthsq(a - b) < eps * eps;
 
-    public static bool Approximately(float3 a, float3 b, float eps = 1e-3f) => math.lengthsq(a - b) < math.pow(eps, 2f);
+    public static bool Approximately(float3 a, float3 b, float eps = 1e-3f) => math.lengthsq(a - b) < eps * eps;
 
     public static float2 ClampMagnitude(float2 v, float maxLength)
     {
@@ -38,7 +38,7 @@ public static class UsefulUtils
     public static bool HasCollideWithCircleObstacle(Circle circle, float2 unitWS, float unitRadius, out float2 negImpactDir)
     {
         float2 center = circle.center;
-        bool isCollided = math.lengthsq(center - unitWS) < math.pow(circle.radius + unitRadius, 2);
+        bool isCollided = math.lengthsq(center - unitWS) < (circle.radius + unitRadius) * (circle.radius + unitRadius);
         negImpactDir = math.select(float2.zero, math.normalizesafe(unitWS - center), isCollided);
 
         return isCollided;
@@ -55,7 +55,7 @@ public static class UsefulUtils
     {
         float2 position = unitWS;
         float2 center = circle.center;
-        bool isIntersected = math.lengthsq(center - unitWS) < math.pow(circle.radius + unitRadius, 2);
+        bool isIntersected = math.lengthsq(center - unitWS) < (circle.radius + unitRadius) * (circle.radius + unitRadius);
 
         if (isIntersected)
         {
@@ -102,7 +102,7 @@ public static class UsefulUtils
             }
         }
 
-        bool isCollided = isInside || math.lengthsq(closestPoint - unitLS) < math.pow(unitRadius, 2);
+        bool isCollided = isInside || math.lengthsq(closestPoint - unitLS) < unitRadius * unitRadius;
         if (isCollided)
         {
             if (math.abs(unitLS.x - halfSize.x) < 1e-3f)
@@ -164,7 +164,7 @@ public static class UsefulUtils
             }
         }
 
-        var isIntersected = isInside || math.lengthsq(closestPoint - unitLS) < math.pow(unitRadius, 2);
+        var isIntersected = isInside || math.lengthsq(closestPoint - unitLS) < unitRadius * unitRadius;
         if (isIntersected)
         {
             if (math.abs(unitLS.x - halfSize.x) < 1e-3f)
