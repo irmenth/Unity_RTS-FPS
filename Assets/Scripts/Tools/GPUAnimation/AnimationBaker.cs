@@ -9,7 +9,7 @@ public class AnimationBaker : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer smr;
     [SerializeField] private AnimationClip clip;
     [SerializeField] private string clipName;
-    [SerializeField][Range(1, 60)] private int frame;
+    [SerializeField][Range(1, 60)] private int frameRate;
 
     [MenuItem("Tools/GPU Animation/Bake Selected")]
     public static void OpenBaker()
@@ -26,7 +26,7 @@ public class AnimationBaker : MonoBehaviour
         root.SetActive(true);
 
         int vertexCount = smr.sharedMesh.vertexCount;
-        int frameCount = Mathf.CeilToInt(clip.length * frame);
+        int frameCount = Mathf.CeilToInt(clip.length * frameRate);
 
         Texture2D tex = new(frameCount, vertexCount * 2, TextureFormat.RGBAFloat, false, true);
         smr.updateWhenOffscreen = true;

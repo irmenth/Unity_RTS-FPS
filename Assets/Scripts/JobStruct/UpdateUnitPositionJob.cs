@@ -102,9 +102,9 @@ public struct UpdateUnitPositionJob : IJobParallelFor
                             float2 distDir = diff / dist;
                             float2 sepDir = dist < 1e-3f ? rand.NextFloat2Direction() : distDir;
                             float linearFactor = 1 - math.saturate(dist / maxDist);
-                            float overLap = 8 * agentData.curMaxSpeed * math.saturate(overLapDist - dist);
+                            float overLap = 16 * agentData.curMaxSpeed * math.saturate(overLapDist - dist);
                             float radiusFactor = math.clamp(data.radius / agentData.radius, 0.1f, 20f);
-                            float mag = (4 * agentData.curMaxSpeed * linearFactor + overLap) * radiusFactor;
+                            float mag = (8 * agentData.curMaxSpeed * linearFactor + overLap) * radiusFactor;
                             sepAccSum += mag * sepDir;
                             count++;
 
@@ -157,12 +157,12 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         alignSpeedFactor = math.select(alignSpeedFactor, alignSpeedFactor / alignCount, alignCount > 0);
         if (count > 0)
         {
-            sepAccSum = UsefulUtils.ClampMagnitude(sepAccSum, 4 * agentData.curMaxSpeed);
+            sepAccSum = UsefulUtils.ClampMagnitude(sepAccSum, 8 * agentData.curMaxSpeed);
             agentData.velocity += deltaTime * (-sepAccSum);
         }
         if (!arrived && !agentData.arrived)
         {
-            agentData.velocity += 2 * agentData.curMaxSpeed * (1 - alignSpeedFactor) * deltaTime * baseDir;
+            agentData.velocity += 4 * agentData.curMaxSpeed * (1 - alignSpeedFactor) * deltaTime * baseDir;
         }
         agentData.velocity = UsefulUtils.ClampMagnitude(agentData.velocity, agentData.curMaxSpeed);
 
@@ -201,7 +201,7 @@ public struct UpdateUnitPositionJob : IJobParallelFor
         // Damping() && ApplyVelocity()
         if (!UsefulUtils.Approximately(agentData.velocity, float2.zero))
         {
-            agentData.velocity *= math.exp(-6f * deltaTime);
+            agentData.velocity *= math.exp(-8f * deltaTime);
             agentData.position += deltaTime * agentData.velocity;
         }
         else

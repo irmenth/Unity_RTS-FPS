@@ -16,7 +16,6 @@ public class UnitBus : MonoBehaviour
         }
 
         if (arrivedCount / (UnitRegister.instance.indexer + 1f) >= 0.8f) arrived = true;
-        if (arrived) Debug.Log("Arrived");
     }
 
     private void UpdateUnitGridIndexBurst()

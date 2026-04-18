@@ -94,40 +94,40 @@ public class GridController : MonoBehaviour
         //     }
         // }
 
-        // Draw Flow Field
-        for (int x = 0; x < directionGridSize.x; x++)
-        {
-            for (int y = 0; y < directionGridSize.y; y++)
-            {
-                int index = x * directionGridSize.y + y;
-                float2 dir = flowField.directionGrid[index].direction;
+        // // Draw Flow Field
+        // for (int x = 0; x < directionGridSize.x; x++)
+        // {
+        //     for (int y = 0; y < directionGridSize.y; y++)
+        //     {
+        //         int index = x * directionGridSize.y + y;
+        //         float2 dir = flowField.directionGrid[index].direction;
 
-                Material dirIndictorMat = null;
-                if (math.isinf(dir.x) && math.isinf(dir.y))
-                    dirIndictorMat = cross;
-                else if (UsefulUtils.Approximately(dir, new float2(0, 1)))
-                    dirIndictorMat = upArrow;
-                else if (UsefulUtils.Approximately(dir, new float2(0, -1)))
-                    dirIndictorMat = downArrow;
-                else if (UsefulUtils.Approximately(dir, new float2(-1, 0)))
-                    dirIndictorMat = leftArrow;
-                else if (UsefulUtils.Approximately(dir, new float2(1, 0)))
-                    dirIndictorMat = rightArrow;
-                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, 1))))
-                    dirIndictorMat = upRightArrow;
-                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, 1))))
-                    dirIndictorMat = upLeftArrow;
-                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, -1))))
-                    dirIndictorMat = downRightArrow;
-                else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, -1))))
-                    dirIndictorMat = downLeftArrow;
-                else if (UsefulUtils.Approximately(dir, new float2(0, 0)))
-                    dirIndictorMat = flag;
+        //         Material dirIndictorMat = null;
+        //         if (math.isinf(dir.x) && math.isinf(dir.y))
+        //             dirIndictorMat = cross;
+        //         else if (UsefulUtils.Approximately(dir, new float2(0, 1)))
+        //             dirIndictorMat = upArrow;
+        //         else if (UsefulUtils.Approximately(dir, new float2(0, -1)))
+        //             dirIndictorMat = downArrow;
+        //         else if (UsefulUtils.Approximately(dir, new float2(-1, 0)))
+        //             dirIndictorMat = leftArrow;
+        //         else if (UsefulUtils.Approximately(dir, new float2(1, 0)))
+        //             dirIndictorMat = rightArrow;
+        //         else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, 1))))
+        //             dirIndictorMat = upRightArrow;
+        //         else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, 1))))
+        //             dirIndictorMat = upLeftArrow;
+        //         else if (UsefulUtils.Approximately(dir, math.normalize(new float2(1, -1))))
+        //             dirIndictorMat = downRightArrow;
+        //         else if (UsefulUtils.Approximately(dir, math.normalize(new float2(-1, -1))))
+        //             dirIndictorMat = downLeftArrow;
+        //         else if (UsefulUtils.Approximately(dir, new float2(0, 0)))
+        //             dirIndictorMat = flag;
 
-                if (dirIndictorMat != null && dirIndicatorMeshRenderers[x, y] != null)
-                    dirIndicatorMeshRenderers[x, y].sharedMaterial = dirIndictorMat;
-            }
-        }
+        //         if (dirIndictorMat != null && dirIndicatorMeshRenderers[x, y] != null)
+        //             dirIndicatorMeshRenderers[x, y].sharedMaterial = dirIndictorMat;
+        //     }
+        // }
 #endif
     }
 
@@ -174,7 +174,7 @@ public class GridController : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    private MeshRenderer[,] dirIndicatorMeshRenderers;
+    // private MeshRenderer[,] dirIndicatorMeshRenderers;
 #endif
     private int impassibleLayer, roughLayer;
 
@@ -202,17 +202,17 @@ public class GridController : MonoBehaviour
         Debug.Log($"[GridController] cost field & obstacle map generation: {sw.ElapsedMilliseconds}ms");
 #endif
 #if UNITY_EDITOR
-        dirIndicatorMeshRenderers = new MeshRenderer[directionGridSize.x, directionGridSize.y];
+        // dirIndicatorMeshRenderers = new MeshRenderer[directionGridSize.x, directionGridSize.y];
 
-        for (int x = 0; x < directionGridSize.x; x++)
-        {
-            for (int y = 0; y < directionGridSize.y; y++)
-            {
-                int index = x * directionGridSize.y + y;
-                Vector3 indictorWS = new(flowField.directionGrid[index].worldPos.x, 0.1f, flowField.directionGrid[index].worldPos.y);
-                dirIndicatorMeshRenderers[x, y] = Instantiate(dirIndictorPrefab, indictorWS, Quaternion.Euler(90, 0, 0)).GetComponent<MeshRenderer>();
-            }
-        }
+        // for (int x = 0; x < directionGridSize.x; x++)
+        // {
+        //     for (int y = 0; y < directionGridSize.y; y++)
+        //     {
+        //         int index = x * directionGridSize.y + y;
+        //         Vector3 indictorWS = new(flowField.directionGrid[index].worldPos.x, 0.1f, flowField.directionGrid[index].worldPos.y);
+        //         dirIndicatorMeshRenderers[x, y] = Instantiate(dirIndictorPrefab, indictorWS, Quaternion.Euler(90, 0, 0)).GetComponent<MeshRenderer>();
+        //     }
+        // }
 #endif
     }
 
