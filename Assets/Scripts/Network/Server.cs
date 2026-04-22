@@ -1,12 +1,15 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using UnityEngine;
 
 public class Server : MonoBehaviour
 {
+    public static Server instance;
+    public const int TICK_RATE = 30;
+
     [SerializeField] private int maxConnections = 4;
     [SerializeField] private ushort port = 7777;
-    [SerializeField] private int tickRate = 30;
 
     private void CleanConnections()
     {
@@ -36,6 +39,28 @@ public class Server : MonoBehaviour
         }
     }
 
+    private void OnCommandReceived(ref DataStreamReader stream)
+    {
+        ulong recTick = stream.ReadULong();
+        if (recTick < curTick) return;
+
+        CommandType commandType = (CommandType)stream.ReadByte();
+        Debug.Log($"[Server] Receive: command {commandType}");
+        BaseCommand command;
+        switch (commandType)
+        {
+            case CommandType.Generate:
+                command = new GenerateCommand();
+                command.Deserialize(ref stream);
+                commandBuffer.Add(command);
+                break;
+            case CommandType.Move:
+                break;
+            case CommandType.Destroy:
+                break;
+        }
+    }
+
     private void HandleConnectionsMeesage()
     {
         for (int i = 0; i < connections.Length; i++)
@@ -48,13 +73,19 @@ public class Server : MonoBehaviour
                 switch (cmd)
                 {
                     case NetworkEvent.Type.Data:
-                        ulong recTick = stream.ReadULong();
-                        int recInput = stream.ReadInt();
-                        Debug.Log($"[Server] Receive: tick {recTick}, input {recInput}");
-                        if (recTick == curTick || recTick == curTick + 1)
+                        OpCode opCode = (OpCode)stream.ReadByte();
+                        switch (opCode)
                         {
-                            pendingInput[i] = recInput;
-                            inputReady[i] = true;
+                            case OpCode.Ping:
+                                double timestamp = stream.ReadDouble();
+                                driver.BeginSend(reliablePipeline, c, out DataStreamWriter writer);
+                                writer.WriteByte((byte)OpCode.Pong);
+                                writer.WriteDouble(timestamp);
+                                driver.EndSend(writer);
+                                break;
+                            case OpCode.Command:
+                                OnCommandReceived(ref stream);
+                                break;
                         }
                         break;
                     case NetworkEvent.Type.Disconnect:
@@ -75,23 +106,18 @@ public class Server : MonoBehaviour
             if (!connections[i].IsCreated || connections[i] == default) continue;
 
             driver.BeginSend(reliablePipeline, connections[i], out DataStreamWriter writer);
+            writer.WriteByte((byte)OpCode.Command);
             writer.WriteULong(curTick);
-            writer.WriteInt(maxConnections);
+            writer.WriteInt(commandBuffer.Count);
 
-            for (int j = 0; j < maxConnections; j++)
+            for (int j = 0; j < commandBuffer.Count; j++)
             {
-                writer.WriteInt(j < connections.Length && inputReady[j] ? pendingInput[j] : 0);
+                commandBuffer[j].Serialize(ref writer);
             }
             driver.EndSend(writer);
         }
 
-        for (int i = 0; i < connections.Length; i++)
-        {
-            if (!connections[i].IsCreated || connections[i] == default) continue;
-
-            inputReady[i] = false;
-            pendingInput[i] = 0;
-        }
+        commandBuffer.Clear();
     }
 
     private NetworkDriver driver;
@@ -100,8 +126,12 @@ public class Server : MonoBehaviour
     private float tickInterval;
     private float tickTimer;
     private ulong curTick;
-    private NativeArray<int> pendingInput;
-    private NativeArray<bool> inputReady;
+    private readonly List<BaseCommand> commandBuffer = new();
+
+    private void Awake()
+    {
+        instance = this;
+    }
 
     private void Start()
     {
@@ -109,9 +139,7 @@ public class Server : MonoBehaviour
         connections = new(maxConnections, Allocator.Persistent);
         reliablePipeline = driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
 
-        tickInterval = 1f / tickRate;
-        pendingInput = new(maxConnections, Allocator.Persistent);
-        inputReady = new(maxConnections, Allocator.Persistent);
+        tickInterval = 1f / TICK_RATE;
 
         NetworkEndpoint endpoint = NetworkEndpoint.Parse("127.0.0.1", port);
         if (driver.Bind(endpoint) != 0)
@@ -143,7 +171,7 @@ public class Server : MonoBehaviour
     {
         driver.Dispose();
         connections.Dispose();
-        pendingInput.Dispose();
-        inputReady.Dispose();
+
+        instance = null;
     }
 }

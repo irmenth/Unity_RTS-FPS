@@ -158,21 +158,6 @@ public class GridController : MonoBehaviour
 #endif
     }
 
-
-    private void GenerateUnit(InputAction.CallbackContext ctx)
-    {
-        Vector2 mousePos = Pointer.current.position.ReadValue();
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);
-        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
-        {
-            for (int i = 0; i < 100; i++)
-            {
-                Instantiate(unitPrefab, hit.point, Quaternion.identity);
-            }
-            Debug.Log($"[GridController] unit count: {UnitRegister.instance.indexer + 1}");
-        }
-    }
-
 #if UNITY_EDITOR
     // private MeshRenderer[,] dirIndicatorMeshRenderers;
 #endif
@@ -184,7 +169,6 @@ public class GridController : MonoBehaviour
         roughLayer = UsefulUtils.GetLayer(roughLayerMask);
 
         InputActionsManager.RTSSetOrangeDestination.started += SetDestination;
-        InputActionsManager.RTSGenerateOrangeUnit.started += GenerateUnit;
     }
 
     private void Start()
@@ -221,6 +205,5 @@ public class GridController : MonoBehaviour
         flowField.Dispose();
 
         InputActionsManager.RTSSetOrangeDestination.started -= SetDestination;
-        InputActionsManager.RTSGenerateOrangeUnit.started -= GenerateUnit;
     }
 }

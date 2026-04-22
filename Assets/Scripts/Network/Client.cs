@@ -1,23 +1,43 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class Client : MonoBehaviour
 {
+    public static Client instance;
+
     [SerializeField] private string serverIP = "127.0.0.1";
     [SerializeField] private ushort serverPort = 7777;
 
-    private void OnTickReceived(ulong tick, int[] inputs)
+    public readonly List<BaseCommand> COMMANDS = new();
+
+    private void OnTickReceived(ulong tick, ref DataStreamReader stream)
     {
-        if (curTick < tick)
+        if (curTick >= tick) return;
+        COMMANDS.Clear();
+        curTick = tick;
+        int commandCount = stream.ReadInt();
+        for (int i = 0; i < commandCount; i++)
         {
-            curTick = tick;
-            for (int i = 0; i < inputs.Length; i++)
+            CommandType commandType = (CommandType)stream.ReadByte();
+            Debug.Log($"[Client] Receive: command {commandType}");
+            BaseCommand command;
+            switch (commandType)
             {
-                Debug.Log($"[Client] tick: {tick}, received input: {inputs[i]}");
+                case CommandType.Generate:
+                    command = new GenerateCommand();
+                    command.Deserialize(ref stream);
+                    COMMANDS.Add(command);
+                    break;
+                case CommandType.Move:
+                    break;
+                case CommandType.Destroy:
+                    break;
             }
         }
+
+        EventBus.Publish(new CommandsReadyEvent(COMMANDS));
     }
 
     private void HandleConnectionMessage()
@@ -34,14 +54,19 @@ public class Client : MonoBehaviour
                     connected = true;
                     break;
                 case NetworkEvent.Type.Data:
-                    ulong serverTick = stream.ReadULong();
-                    int inputCount = stream.ReadInt();
-                    int[] serverInputs = new int[inputCount];
-                    for (int i = 0; i < inputCount; i++)
+                    byte opCode = stream.ReadByte();
+                    switch (opCode)
                     {
-                        serverInputs[i] = stream.ReadInt();
+                        case (byte)OpCode.Pong:
+                            double sendTimestamp = stream.ReadDouble();
+                            double rtt = (Time.realtimeSinceStartupAsDouble - sendTimestamp) * 1000;
+                            smoothRTT = smoothRTT == 0 ? rtt : rtt * 0.1 + smoothRTT * 0.9;
+                            break;
+                        case (byte)OpCode.Command:
+                            ulong serverTick = stream.ReadULong();
+                            OnTickReceived(serverTick, ref stream);
+                            break;
                     }
-                    OnTickReceived(serverTick, serverInputs);
                     break;
                 case NetworkEvent.Type.Disconnect:
                     Debug.Log($"[Client] disconnected from {serverIP}:{serverPort}");
@@ -51,14 +76,30 @@ public class Client : MonoBehaviour
         }
     }
 
-    private void SendInput(ulong targetTick, int value)
+    private void SendPing()
     {
-        if (!connected) return;
+        driver.BeginSend(reliablePipeline, connection, out DataStreamWriter writer);
+        writer.WriteByte((byte)OpCode.Ping);
+        writer.WriteDouble(Time.realtimeSinceStartupAsDouble);
+        driver.EndSend(writer);
+    }
+
+    public void SendInput(BaseCommand cmd)
+    {
+        float tickIntervalMS = 1000f / Server.TICK_RATE;
+        int ticksAhead = (int)(smoothRTT / tickIntervalMS + 1f) + 1;
+        ulong forTick = curTick + (ulong)ticksAhead;
 
         driver.BeginSend(reliablePipeline, connection, out DataStreamWriter writer);
-        writer.WriteULong(targetTick);
-        writer.WriteInt(value);
+        writer.WriteByte((byte)OpCode.Command);
+        writer.WriteULong(forTick);
+        cmd.Serialize(ref writer);
         driver.EndSend(writer);
+    }
+
+    private void Awake()
+    {
+        instance = this;
     }
 
     private NetworkDriver driver;
@@ -66,8 +107,6 @@ public class Client : MonoBehaviour
     private NetworkPipeline reliablePipeline;
     private bool connected = false;
     private ulong curTick;
-    private int pendingInput;
-    private bool inputReady;
 
     private void Start()
     {
@@ -79,6 +118,10 @@ public class Client : MonoBehaviour
         Debug.Log($"[Client] connecting to {endpoint}...");
     }
 
+    public double smoothRTT;
+    private float pingTimer;
+    private const float PING_INTERVAL = 1f;
+
     private void Update()
     {
         driver.ScheduleUpdate().Complete();
@@ -86,22 +129,23 @@ public class Client : MonoBehaviour
         if (!connection.IsCreated) return;
         HandleConnectionMessage();
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (connected)
         {
-            pendingInput = 1;
-            inputReady = true;
-        }
-
-        if (connected && inputReady)
-        {
-            SendInput(curTick + 1, pendingInput);
-            pendingInput = 0;
-            inputReady = false;
+            pingTimer += Time.deltaTime;
+            bool canSendPing = false;
+            while (pingTimer >= PING_INTERVAL)
+            {
+                pingTimer -= PING_INTERVAL;
+                canSendPing = true;
+            }
+            if (canSendPing) SendPing();
         }
     }
 
     private void OnDestroy()
     {
         driver.Dispose();
+
+        instance = null;
     }
 }
