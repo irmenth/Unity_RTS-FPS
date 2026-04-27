@@ -13,7 +13,7 @@ public class InputActionSystem : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
         {
-            Client.instance.SendInput(new GenerateCommand(UnitType.OrangeSmall, 10, new(hit.point.x, hit.point.z)));
+            Client.instance.SendInput(new GenerateCommand(UnitType.OrangeSmall, 1, new(hit.point.x, hit.point.z)));
         }
     }
 
@@ -23,7 +23,7 @@ public class InputActionSystem : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
         {
-            Client.instance.SendInput(new GenerateCommand(UnitType.BlueSmall, 10, new(hit.point.x, hit.point.z)));
+            Client.instance.SendInput(new GenerateCommand(UnitType.BlueSmall, 1, new(hit.point.x, hit.point.z)));
         }
     }
 
@@ -43,13 +43,17 @@ public class InputActionSystem : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
         {
-            Client.instance.SendInput(new MoveCommand(new(hit.point.x, hit.point.z)));
+            int[] selectedArray = new int[UnitRegister.instance.selectedList.Length];
+            UnitRegister.instance.selectedList.AsArray().CopyTo(selectedArray);
+            Client.instance.SendInput(new MoveCommand(new(hit.point.x, hit.point.z), selectedArray));
         }
     }
 
     private void Delete(InputAction.CallbackContext ctx)
     {
-        Client.instance.SendInput(new DeleteCommand());
+        int[] selectedArray = new int[UnitRegister.instance.selectedList.Length];
+        UnitRegister.instance.selectedList.AsArray().CopyTo(selectedArray);
+        Client.instance.SendInput(new DeleteCommand(selectedArray));
     }
 
     private void Awake()

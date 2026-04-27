@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7925f741efa339140a65e9c2d46b05ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  capacity: 15000
+  capacity: 30000
   indexer: -1
 --- !u!1 &1068222694
 GameObject:

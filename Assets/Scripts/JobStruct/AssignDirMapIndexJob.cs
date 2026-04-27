@@ -4,29 +4,29 @@ using Unity.Jobs;
 using Unity.Mathematics;
 
 [BurstCompile]
-public struct AssignDirMapIndexJob : IJobParallelFor
+public struct AssignDirMapIndexJob : IJob
 {
-    [ReadOnly] private NativeArray<bool> enableMap;
+    [ReadOnly] private NativeArray<int> selectedArray;
     private NativeArray<ulong> dirMapIndices;
     private NativeArray<bool> arrived;
     private readonly ulong dirMapID;
 
     public AssignDirMapIndexJob(
-        NativeArray<bool> enableMap,
+        NativeArray<int> selectedArray,
         NativeArray<ulong> dirMapIndices,
         NativeArray<bool> arrived,
         ulong dirMapID
     )
     {
-        this.enableMap = enableMap;
+        this.selectedArray = selectedArray;
         this.dirMapIndices = dirMapIndices;
         this.arrived = arrived;
         this.dirMapID = dirMapID;
     }
 
-    public void Execute(int index)
+    public void Execute()
     {
-        if (enableMap[index])
+        foreach (int index in selectedArray)
         {
             dirMapIndices[index] = dirMapID;
             arrived[index] = false;

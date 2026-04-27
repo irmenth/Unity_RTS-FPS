@@ -17,6 +17,7 @@ public struct UpdateUnitDirAccJob : IJobParallelFor
     private readonly float destRadius;
     [ReadOnly] private NativeArray<float2> positions;
     private NativeArray<bool> arrived;
+    private NativeArray<float2> lastBaseDirs;
 
     public UpdateUnitDirAccJob(
         NativeArray<float2> dirMap,
@@ -29,7 +30,8 @@ public struct UpdateUnitDirAccJob : IJobParallelFor
         float2 destination,
         float destRadius,
         NativeArray<float2> positions,
-        NativeArray<bool> arrived
+        NativeArray<bool> arrived,
+        NativeArray<float2> lastBaseDirs
     )
     {
         this.dirMap = dirMap;
@@ -43,6 +45,7 @@ public struct UpdateUnitDirAccJob : IJobParallelFor
         this.destRadius = destRadius;
         this.positions = positions;
         this.arrived = arrived;
+        this.lastBaseDirs = lastBaseDirs;
     }
 
     public void Execute(int index)
@@ -58,37 +61,48 @@ public struct UpdateUnitDirAccJob : IJobParallelFor
         int2 dgPos = new(dgIndices[index] / dgSize.y, dgIndices[index] % dgSize.y);
         float2 baseDir = dirMap[dgIndices[index]];
         bool baseInf = math.isinf(baseDir.x) && math.isinf(baseDir.y);
+        bool lastBaseInf = math.isinf(lastBaseDirs[index].x) && math.isinf(lastBaseDirs[index].y);
 
         if (baseInf)
         {
-            int step = 1;
-            while (step < math.max(dgSize.x, dgSize.y))
+            if (lastBaseInf)
             {
-                bool canBreak = false;
-                for (int dx = -step; dx <= step; dx++)
+                int step = 1;
+                while (step < math.max(dgSize.x, dgSize.y))
                 {
-                    for (int dy = -step; dy <= step; dy++)
+                    bool canBreak = false;
+                    for (int dx = -step; dx <= step; dx++)
                     {
-                        if (dx != -step && dx != step && dy != -step && dy != step) continue;
-
-                        int2 newPos = new(dgPos.x + dx, dgPos.y + dy);
-                        if (newPos.x < 0 || newPos.x >= dgSize.x || newPos.y < 0 || newPos.y >= dgSize.y) continue;
-                        int newIndex = newPos.x * dgSize.y + newPos.y;
-
-                        float2 newDir = dirMap[newIndex];
-                        if (math.isfinite(newDir.x) && math.isfinite(newDir.y))
+                        for (int dy = -step; dy <= step; dy++)
                         {
-                            baseDir = newDir;
-                            canBreak = true;
+                            if (dx != -step && dx != step && dy != -step && dy != step) continue;
+
+                            int2 newPos = new(dgPos.x + dx, dgPos.y + dy);
+                            if (newPos.x < 0 || newPos.x >= dgSize.x || newPos.y < 0 || newPos.y >= dgSize.y) continue;
+                            int newIndex = newPos.x * dgSize.y + newPos.y;
+
+                            float2 newDir = dirMap[newIndex];
+                            if (math.isfinite(newDir.x) && math.isfinite(newDir.y))
+                            {
+                                baseDir = newDir;
+                                canBreak = true;
+                            }
                         }
+                        if (canBreak) break;
                     }
                     if (canBreak) break;
+                    step++;
                 }
-                if (canBreak) break;
-                step++;
+
+                lastBaseDirs[index] = baseDir;
+            }
+            else
+            {
+                baseDir = lastBaseDirs[index];
             }
         }
 
+        lastBaseDirs[index] = baseDir;
         dirAccs[index] = 4 * curMaxSpeeds[index] * baseDir;
     }
 }

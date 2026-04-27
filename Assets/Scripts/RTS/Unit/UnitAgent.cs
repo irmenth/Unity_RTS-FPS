@@ -22,12 +22,10 @@ public class UnitAgent : MonoBehaviour
     }
 
     private bool isMoving;
-    private Vector3 lastPos;
 
     private void UpdateAnimationState()
     {
-        isMoving = Vector3.SqrMagnitude(lastPos - transform.position) >= 4 * Time.deltaTime * Time.deltaTime;
-        lastPos = transform.position;
+        isMoving = math.lengthsq(UnitRegister.instance.velocities[id]) > 1f;
     }
 
     private int curStateFrame, lerpFrame;
@@ -83,7 +81,6 @@ public class UnitAgent : MonoBehaviour
     private void Awake()
     {
         indicator.SetActive(false);
-        lastPos = transform.position;
 
         animStateMachine = new(AnimationState.Idle, OnStateStart, OnStateUpdate);
 

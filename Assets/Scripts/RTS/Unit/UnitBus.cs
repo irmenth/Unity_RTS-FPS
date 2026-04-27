@@ -52,7 +52,7 @@ public class UnitBus : MonoBehaviour
         job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
     }
 
-    private readonly List<(int unitCount, NativeArray<float2> dirMap, ulong dirMapID, float2 destination, float destRadius, float existTimer)> moveList = new();
+    private readonly List<(NativeArray<float2> dirMap, ulong dirMapID, float2 destination, float destRadius, float existTimer)> moveList = new();
 
     private void UpdateUnitDirAccBurst()
     {
@@ -83,11 +83,12 @@ public class UnitBus : MonoBehaviour
                 destination,
                 destRadius,
                 UnitRegister.instance.positions,
-                UnitRegister.instance.arrived
+                UnitRegister.instance.arrived,
+                UnitRegister.instance.lastBaseDirs
             );
             job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
 
-            moveList[i] = (UnitRegister.instance.selectedList.Length, dirMap, dirMapID, destination, destRadius, existTimer + Time.deltaTime);
+            moveList[i] = (dirMap, dirMapID, destination, destRadius, existTimer + Time.deltaTime);
         }
     }
 
@@ -193,43 +194,46 @@ public class UnitBus : MonoBehaviour
     public void SetDestination(MoveCommand cmd)
     {
         if (UnitRegister.instance.indexer + 1 <= 0) return;
-        int count = UnitRegister.instance.selectedList.Length;
+        int count = cmd.selectedArray.Length;
         if (count <= 0) return;
 
         float2 destination = cmd.pos;
         int destIndex = FF.WorldToDGIndex(destination);
 
+        NativeArray<int> selectedFormServer = new(cmd.selectedArray.Length, Allocator.Temp);
+        selectedFormServer.CopyFrom(cmd.selectedArray);
         AssignDirMapIndexJob job = new(
-            UnitRegister.instance.selectedMap,
+            selectedFormServer,
             UnitRegister.instance.dirMapIndices,
             UnitRegister.instance.arrived,
             curDirMapID
         );
-        job.Schedule(UnitRegister.instance.indexer + 1, 64).Complete();
+        job.Schedule().Complete();
+        selectedFormServer.Dispose();
 
         var dirMap = FF.GenerateFlowFieldBurst(FF.GenerateHeatMapBurst(ref destIndex));
         destination = FF.directionGrid[destIndex].worldPos;
         float averageRadius = 0;
         for (int i = 0; i < count; i++)
         {
-            int index = UnitRegister.instance.selectedList[i];
+            int index = cmd.selectedArray[i];
             averageRadius += UnitRegister.instance.radii[index];
         }
         averageRadius /= count;
         float destRadius = averageRadius * sqrt2 * math.ceil(math.sqrt(count));
 
-        moveList.Add((count, dirMap, curDirMapID, destination, destRadius, 0));
+        moveList.Add((dirMap, curDirMapID, destination, destRadius, 0));
         curDirMapID++;
     }
 
-    public void Delete()
+    public void Delete(DeleteCommand cmd)
     {
         IndicatorBatchManager.instance.Clear();
         InstancedAniManager.instance.Clear();
 
-        for (int i = UnitRegister.instance.selectedList.Length - 1; i >= 0; i--)
+        for (int i = cmd.selectedArray.Length - 1; i >= 0; i--)
         {
-            int index = UnitRegister.instance.selectedList[i];
+            int index = cmd.selectedArray[i];
             UnitPool.instance.Destroy(UnitRegister.instance.unitTrans[index].gameObject);
             UnitRegister.instance.Unregister(index);
         }

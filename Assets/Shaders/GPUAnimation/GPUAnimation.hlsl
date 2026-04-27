@@ -10,6 +10,7 @@ struct AnimateData
 };
 
 StructuredBuffer<AnimateData> _AnimateDataBuffer;
+int _BatchIDBase;
 
 void SampleGPUAnimation_float(
     in float instanceID,
@@ -21,7 +22,8 @@ void SampleGPUAnimation_float(
     out float3 outNormalOS
 )
 {
-    AnimateData data = _AnimateDataBuffer[instanceID];
+    uint globalID = (uint)(instanceID + _BatchIDBase);
+    AnimateData data = _AnimateDataBuffer[globalID];
     float doubleCount = vertexCount * 2;
 
     float2 uvPos1;

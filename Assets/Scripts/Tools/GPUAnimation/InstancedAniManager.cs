@@ -4,6 +4,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.Collections;
 
 public class InstancedAniManager : MonoBehaviour
 {
@@ -36,6 +37,7 @@ public class InstancedAniManager : MonoBehaviour
     private int lastClearedFrame = -1;
     private readonly Dictionary<(Mesh, Material), RenderBatch> batches = new();
     private static readonly int BufferPropID = Shader.PropertyToID("_AnimateDataBuffer");
+    private static readonly int BatchIDBasePropID = Shader.PropertyToID("_BatchIDBase");
 
     private void Awake()
     {
@@ -62,7 +64,7 @@ public class InstancedAniManager : MonoBehaviour
         var key = (mesh, material);
         if (!batches.TryGetValue(key, out var batch))
         {
-            batch = new RenderBatch(mesh, material, (int)1.5e4f);
+            batch = new RenderBatch(mesh, material, (int)3e4f);
             batches[key] = batch;
         }
         batch.Add(data);
@@ -88,11 +90,12 @@ public class InstancedAniManager : MonoBehaviour
         public ComputeBuffer buffer;
         public MaterialPropertyBlock mpb;
 
-        private readonly List<InstanceData> instances = new();
+        private NativeList<InstanceData> instances;
         private readonly int capacity;
 
         public RenderBatch(Mesh mesh, Material material, int capacity)
         {
+            instances = new NativeList<InstanceData>(capacity, Allocator.Persistent);
             this.mesh = mesh;
             this.material = material;
             this.capacity = capacity;
@@ -103,17 +106,38 @@ public class InstancedAniManager : MonoBehaviour
 
         public void Add(in InstanceData data)
         {
-            if (instances.Count >= capacity) return;
-            instances.Add(data);
+            if (instances.Length >= capacity) return;
+            instances.AddNoResize(data);
         }
 
         public void Clear() => instances.Clear();
-        public int Count => instances.Count;
+        public int Count => instances.Length;
 
         public void Draw()
         {
             int count = Count;
             if (count == 0) return;
+
+            var gpuChunk = ArrayPool<UnitAnimDataGPU>.Shared.Rent(count);
+            try
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    InstanceData src = instances[i];
+                    gpuChunk[i] = new UnitAnimDataGPU
+                    {
+                        frame1 = src.frame1,
+                        frame2 = src.frame2,
+                        t = src.t,
+                        _ = 0
+                    };
+                }
+                buffer.SetData(gpuChunk, 0, 0, count);
+            }
+            finally
+            {
+                ArrayPool<UnitAnimDataGPU>.Shared.Return(gpuChunk);
+            }
 
             const int MaxPerDrawCall = 400;
 
@@ -121,35 +145,37 @@ public class InstancedAniManager : MonoBehaviour
             {
                 int drawCount = Math.Min(count - offset, MaxPerDrawCall);
 
-                var gpuChunk = ArrayPool<UnitAnimDataGPU>.Shared.Rent(drawCount);
                 var matChunk = ArrayPool<Matrix4x4>.Shared.Rent(drawCount);
-
                 try
                 {
                     for (int i = 0; i < drawCount; i++)
                     {
                         InstanceData src = instances[offset + i];
-                        gpuChunk[i] = new UnitAnimDataGPU
-                        {
-                            frame1 = src.frame1,
-                            frame2 = src.frame2,
-                            t = src.t,
-                            _ = 0
-                        };
                         matChunk[i] = src.matrix;
                     }
 
-                    buffer.SetData(gpuChunk, 0, 0, drawCount);
-                    Graphics.DrawMeshInstanced(mesh, 0, material, matChunk, drawCount, mpb, ShadowCastingMode.On, true, 0);
+                    mpb.SetFloat(BatchIDBasePropID, offset);
+                    var rParams = new RenderParams(material)
+                    {
+                        shadowCastingMode = ShadowCastingMode.On,
+                        receiveShadows = true,
+                        layer = 0,
+                        matProps = mpb
+                    };
+
+                    Graphics.RenderMeshInstanced(rParams, mesh, 0, matChunk, drawCount, 0);
                 }
                 finally
                 {
-                    ArrayPool<UnitAnimDataGPU>.Shared.Return(gpuChunk);
                     ArrayPool<Matrix4x4>.Shared.Return(matChunk);
                 }
             }
         }
 
-        public void Release() => buffer?.Release();
+        public void Release()
+        {
+            instances.Dispose();
+            buffer.Release();
+        }
     }
 }

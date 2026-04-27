@@ -51,7 +51,7 @@ public class UnitPool : MonoBehaviour
     private void Awake()
     {
         instance = this;
-        pool = new GameObject[(int)1.5e4];
+        pool = new GameObject[(int)3e4];
     }
 
     private void OnDestroy()

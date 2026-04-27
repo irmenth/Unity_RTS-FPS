@@ -4,41 +4,21 @@ public class CommandExecuter : MonoBehaviour
 {
     public static CommandExecuter instance;
 
-    private void Generate(GenerateCommand cmd)
-    {
-        if (!UnitBus.instance) return;
-
-        UnitBus.instance.InstantiateUnit(cmd);
-    }
-
-    private void Move(MoveCommand cmd)
-    {
-        if (!UnitBus.instance) return;
-
-        UnitBus.instance.SetDestination(cmd);
-    }
-
-    private void Delete()
-    {
-        if (!UnitBus.instance) return;
-
-        UnitBus.instance.Delete();
-    }
-
     private void OnCommandsReady(CommandsReadyEvent e)
     {
+        if (!UnitBus.instance) return;
         foreach (var cmd in e.commands)
         {
             switch (cmd.commandType)
             {
                 case CommandType.Generate:
-                    Generate(cmd as GenerateCommand);
+                    UnitBus.instance.InstantiateUnit(cmd as GenerateCommand);
                     break;
                 case CommandType.Move:
-                    Move(cmd as MoveCommand);
+                    UnitBus.instance.SetDestination(cmd as MoveCommand);
                     break;
                 case CommandType.Delete:
-                    Delete();
+                    UnitBus.instance.Delete(cmd as DeleteCommand);
                     break;
             }
         }

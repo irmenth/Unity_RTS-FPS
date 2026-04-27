@@ -62,15 +62,21 @@ public class IndicatorBatchManager : MonoBehaviour
             for (int i = 0; i < count; i += MaxPerDrawCall)
             {
                 int drawCount = Math.Min(count - i, MaxPerDrawCall);
-                var arr = ArrayPool<Matrix4x4>.Shared.Rent(drawCount);
+                var matChunk = ArrayPool<Matrix4x4>.Shared.Rent(drawCount);
                 try
                 {
-                    kvp.Value.CopyTo(i, arr, 0, drawCount);
-                    Graphics.DrawMeshInstanced(kvp.Key.Mesh, 0, kvp.Key.Mat, arr, drawCount, emptyMPB, ShadowCastingMode.Off, false, 0);
+                    kvp.Value.CopyTo(i, matChunk, 0, drawCount);
+                    var rParams = new RenderParams(kvp.Key.Mat)
+                    {
+                        shadowCastingMode = ShadowCastingMode.Off,
+                        receiveShadows = false,
+                        layer = 0,
+                    };
+                    Graphics.RenderMeshInstanced(rParams, kvp.Key.Mesh, 0, matChunk, drawCount, 0);
                 }
                 finally
                 {
-                    ArrayPool<Matrix4x4>.Shared.Return(arr);
+                    ArrayPool<Matrix4x4>.Shared.Return(matChunk);
                 }
             }
         }

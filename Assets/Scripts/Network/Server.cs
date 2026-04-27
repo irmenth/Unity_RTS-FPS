@@ -147,7 +147,8 @@ public class Server : MonoBehaviour
 
         tickInterval = 1f / TICK_RATE;
 
-        NetworkEndpoint endpoint = NetworkEndpoint.Parse("127.0.0.1", port);
+        NetworkEndpoint endpoint = NetworkEndpoint.AnyIpv4;
+        endpoint.Port = port;
         if (driver.Bind(endpoint) != 0)
         {
             Debug.LogError($"[Server] failed to bind to endpoint {endpoint}");

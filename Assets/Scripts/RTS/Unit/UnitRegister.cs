@@ -7,7 +7,7 @@ public class UnitRegister : MonoBehaviour
 {
     public static UnitRegister instance;
 
-    [SerializeField] private int capacity = (int)1.5e4;
+    [SerializeField] private int capacity = (int)3e4;
 
     public NativeArray<float> radii;
     public NativeArray<float> speeds;
@@ -15,6 +15,7 @@ public class UnitRegister : MonoBehaviour
     public NativeArray<float2> positions;
     public NativeArray<float2> lastPositions;
     public NativeArray<quaternion> rotations;
+    public NativeArray<float2> lastBaseDirs;
     public NativeArray<float2> dirAccs;
     public NativeArray<float2> boidsAccs;
     public NativeArray<float> dirAccRatios;
@@ -37,6 +38,7 @@ public class UnitRegister : MonoBehaviour
         positions[index] = positions[indexer];
         lastPositions[index] = lastPositions[indexer];
         rotations[index] = rotations[indexer];
+        lastBaseDirs[index] = lastBaseDirs[indexer];
         dirAccs[index] = dirAccs[indexer];
         boidsAccs[index] = boidsAccs[indexer];
         dirAccRatios[index] = dirAccRatios[indexer];
@@ -58,6 +60,7 @@ public class UnitRegister : MonoBehaviour
         positions[indexer] = position;
         lastPositions[indexer] = position;
         rotations[indexer] = quaternion.identity;
+        lastBaseDirs[indexer] = new float2(float.PositiveInfinity, float.PositiveInfinity);
         dirAccs[indexer] = float2.zero;
         boidsAccs[indexer] = float2.zero;
         dirAccRatios[indexer] = 0.5f;
@@ -93,6 +96,7 @@ public class UnitRegister : MonoBehaviour
         positions = new(capacity, Allocator.Persistent);
         lastPositions = new(capacity, Allocator.Persistent);
         rotations = new(capacity, Allocator.Persistent);
+        lastBaseDirs = new(capacity, Allocator.Persistent);
         dirAccs = new(capacity, Allocator.Persistent);
         boidsAccs = new(capacity, Allocator.Persistent);
         dirAccRatios = new(capacity, Allocator.Persistent);
@@ -114,6 +118,7 @@ public class UnitRegister : MonoBehaviour
         positions.Dispose();
         lastPositions.Dispose();
         rotations.Dispose();
+        lastBaseDirs.Dispose();
         dirAccs.Dispose();
         boidsAccs.Dispose();
         dirAccRatios.Dispose();
