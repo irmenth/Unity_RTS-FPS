@@ -7,7 +7,7 @@ public class UnitRegister : MonoBehaviour
 {
     public static UnitRegister instance;
 
-    [SerializeField] private int capacity = (int)3e4;
+    [SerializeField] private int capacity = (int)6e4;
 
     public NativeArray<float> radii;
     public NativeArray<float> speeds;

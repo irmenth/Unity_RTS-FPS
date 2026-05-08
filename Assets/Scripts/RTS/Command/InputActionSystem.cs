@@ -13,7 +13,7 @@ public class InputActionSystem : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
         {
-            Client.instance.SendInput(new GenerateCommand(UnitType.OrangeSmall, 1, new(hit.point.x, hit.point.z)));
+            Client.instance.SendInput(new GenerateCommand(UnitType.OrangeSmall, 2000, new(hit.point.x, hit.point.z)));
         }
     }
 
@@ -23,7 +23,7 @@ public class InputActionSystem : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayerMask))
         {
-            Client.instance.SendInput(new GenerateCommand(UnitType.BlueSmall, 1, new(hit.point.x, hit.point.z)));
+            Client.instance.SendInput(new GenerateCommand(UnitType.BlueSmall, 2000, new(hit.point.x, hit.point.z)));
         }
     }
 

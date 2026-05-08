@@ -64,7 +64,7 @@ public class InstancedAniManager : MonoBehaviour
         var key = (mesh, material);
         if (!batches.TryGetValue(key, out var batch))
         {
-            batch = new RenderBatch(mesh, material, (int)3e4f);
+            batch = new RenderBatch(mesh, material, (int)6e4);
             batches[key] = batch;
         }
         batch.Add(data);

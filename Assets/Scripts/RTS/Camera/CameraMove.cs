@@ -3,9 +3,7 @@ using UnityEngine.InputSystem;
 
 public class CameraMove : MonoBehaviour
 {
-    [SerializeField][Range(0, 100)] private float moveSpeed = 5f;
-    [SerializeField] private Vector2 mapRightTop;
-    [SerializeField] private Vector2 mapLeftBottom;
+    [SerializeField][Range(0, 1)] private float moveSpeed = 0.2f;
 
     private bool shouldMove;
     private Vector2 mouseStartPos;
@@ -24,10 +22,7 @@ public class CameraMove : MonoBehaviour
 
         Vector2 mouseCurPos = Pointer.current.position.ReadValue();
         Vector2 delta = mouseCurPos - mouseStartPos;
-        Vector3 targetPos = tr.position + moveSpeed * Time.deltaTime * (-delta.x * right - delta.y * forward);
-        targetPos.x = Mathf.Clamp(targetPos.x, mapLeftBottom.x, mapRightTop.x);
-        targetPos.z = Mathf.Clamp(targetPos.z, mapLeftBottom.y, mapRightTop.y);
-        tr.position = targetPos;
+        tr.position += moveSpeed * (-delta.x * right - delta.y * forward);
         mouseStartPos = mouseCurPos;
     }
 

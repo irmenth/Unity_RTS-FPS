@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class CameraRotate : MonoBehaviour
 {
-    [SerializeField][Range(0, 100)] private float rotationSpeed;
+    [SerializeField][Range(0, 2)] private float rotationSpeed = 0.8f;
 
     private float startX;
     private bool shouldRotate = false;
@@ -12,7 +12,7 @@ public class CameraRotate : MonoBehaviour
     {
         float curX = Pointer.current.position.ReadValue().x;
         float delta = curX - startX;
-        tr.Rotate(Vector3.up, delta * rotationSpeed * Time.deltaTime, Space.World);
+        tr.Rotate(Vector3.up, delta * rotationSpeed, Space.World);
         startX = curX;
     }
 

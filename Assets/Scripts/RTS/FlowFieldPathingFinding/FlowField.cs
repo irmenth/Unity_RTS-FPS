@@ -47,7 +47,7 @@ public class FlowField
         obstacleGrid = new(ogSize.x * ogSize.y, Allocator.Persistent);
 
         costMap = new(dgSize.x * dgSize.y, Allocator.Persistent);
-        cellToUnit = new((int)4.8e4f, Allocator.Persistent);
+        cellToUnit = new(100 * ogSize.x * ogSize.y, Allocator.Persistent);
         cellToObstacle = new(4 * ogSize.x * ogSize.y, Allocator.Persistent);
     }
 
